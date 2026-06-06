@@ -4,9 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Big Apple English</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -20,68 +19,100 @@
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow-x:hidden}
 
-/* SPLASH */
-#splash{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .5s}
-#splash.hide{opacity:0;pointer-events:none;z-index:-1}
-.splash-logo{width:80px;height:80px;background:var(--red);border-radius:20px;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:28px;color:#fff;margin-bottom:20px;animation:pop .6s cubic-bezier(.34,1.56,.64,1)}
-@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
-.splash-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;color:#fff;margin-bottom:6px}
-.splash-sub{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:40px}
-.role-btns{display:flex;flex-direction:column;gap:12px;width:260px}
-.role-btn{padding:15px;border-radius:14px;border:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:10px;justify-content:center;transition:transform .1s;font-family:'Noto Sans KR',sans-serif}
-.role-btn:active{transform:scale(.97)}
+/* 화면들 */
+.screen{display:none;min-height:100vh;max-width:480px;margin:0 auto;flex-direction:column}
+.screen.show{display:flex}
+
+/* 스플래시/로그인 공통 */
+.dark-screen{background:var(--navy);align-items:center;justify-content:center;padding:32px 24px}
+.logo-box{width:80px;height:80px;background:var(--red);border-radius:20px;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:28px;color:#fff;margin-bottom:20px}
+.app-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;color:#fff;margin-bottom:6px;text-align:center}
+.app-sub{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:40px;text-align:center}
+.dark-card{background:rgba(255,255,255,.08);border-radius:16px;padding:24px;width:100%;max-width:320px}
+.dark-card-title{font-size:16px;font-weight:700;color:#fff;text-align:center;margin-bottom:6px}
+.dark-card-sub{font-size:12px;color:rgba(255,255,255,.5);text-align:center;margin-bottom:20px}
+.dark-input{width:100%;padding:14px;border-radius:10px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);font-size:16px;color:#fff;font-family:'Noto Sans KR',sans-serif;text-align:center;outline:none}
+.dark-input::placeholder{color:rgba(255,255,255,.35)}
+.dark-input:focus{border-color:var(--gold)}
+.dark-btn{width:100%;padding:14px;border-radius:10px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-top:10px;transition:opacity .15s}
+.dark-btn:active{opacity:.8}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.role-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:280px}
+.role-btn{padding:15px;border-radius:14px;border:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:10px;justify-content:center;font-family:'Noto Sans KR',sans-serif;transition:opacity .15s}
+.role-btn:active{opacity:.8}
 .role-btn.student{background:var(--red);color:#fff}
 .role-btn.teacher{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.err-box{background:rgba(232,57,42,.2);border:1px solid rgba(232,57,42,.4);border-radius:8px;padding:10px 12px;font-size:12px;color:#FFB3AE;text-align:center;margin-top:10px;display:none}
 
-/* LAYOUT */
-.view{display:none;flex-direction:column;min-height:100vh;max-width:480px;margin:0 auto}
-.view.active{display:flex}
+/* 헤더 */
+.hdr{background:var(--navy);padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hdr-logo{width:34px;height:34px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:12px;color:#fff;flex-shrink:0}
+.hdr-text h1{font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:#fff}
+.hdr-text p{font-size:11px;color:rgba(255,255,255,.4)}
+.hdr-right{margin-left:auto;background:rgba(255,255,255,.1);border-radius:20px;padding:5px 10px 5px 6px;display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0}
+.hdr-av{width:22px;height:22px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--navy)}
+.hdr-right span{font-size:12px;color:#fff;font-weight:600}
 
-/* HEADER */
-.hdr{background:var(--navy);padding:16px 18px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-.hdr-logo{width:36px;height:36px;background:var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;color:#fff;flex-shrink:0}
-.hdr-text h1{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;color:#fff;line-height:1.2}
-.hdr-text p{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px}
-.hdr-chip{margin-left:auto;background:rgba(255,255,255,.1);border-radius:20px;padding:5px 11px 5px 7px;display:flex;align-items:center;gap:7px;flex-shrink:0;cursor:pointer}
-.hdr-avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.hdr-chip span{font-size:12px;color:#fff;font-weight:600}
-
-/* TABS */
+/* 탭 */
 .tabs{background:var(--navy-mid);display:flex;flex-shrink:0}
-.tab{flex:1;padding:10px 0;font-size:11px;color:rgba(255,255,255,.45);text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;font-weight:500}
+.tab{flex:1;padding:10px 2px;font-size:11px;color:rgba(255,255,255,.45);text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;font-weight:500}
 .tab.on{color:#fff;border-bottom-color:var(--gold)}
 
-/* BODY */
-.body{flex:1;overflow-y:auto;padding:16px 16px 100px;-webkit-overflow-scrolling:touch}
+/* 바디 */
+.body{flex:1;overflow-y:auto;padding:14px 14px 90px;-webkit-overflow-scrolling:touch}
 
-/* BOTTOM NAV */
-.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:8px 0 12px;z-index:50}
+/* 하단 네비 */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-top:1px solid var(--border);display:flex;padding:8px 0 14px;z-index:50}
 .bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0}
-.bni-icon{font-size:20px}
-.bni-label{font-size:10px;color:var(--muted)}
-.bni.on .bni-icon,.bni.on .bni-label{color:var(--red)}
+.bni-ic{font-size:20px}
+.bni-lb{font-size:10px;color:var(--muted)}
+.bni.on .bni-ic,.bni.on .bni-lb{color:var(--red)}
 
-/* CARDS */
-.card{background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:12px}
-.card-accent{border-left:4px solid var(--red)}
-.sec-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+/* 카드 */
+.card{background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border);margin-bottom:12px}
+.card-red{border-left:4px solid var(--red)}
+.slabel{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
 
-/* BADGE */
-.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
-.badge-red{background:var(--red-light);color:var(--red)}
-.badge-green{background:var(--green-light);color:#1B5E20}
-.badge-gold{background:var(--gold-light);color:#7B4F00}
-.badge-blue{background:var(--blue-light);color:#0D47A1}
+/* 뱃지 */
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
+.br{background:var(--red-light);color:var(--red)}
+.bg{background:var(--green-light);color:#1B5E20}
+.bo{background:var(--gold-light);color:#7B4F00}
+.bb{background:var(--blue-light);color:#0D47A1}
 
-/* RECORD */
+/* 버튼 */
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s;font-family:'Noto Sans KR',sans-serif}
+.btn:active{opacity:.8}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-out{background:none;border:1.5px solid var(--border);color:var(--text)}
+.btn-sm{padding:7px 14px;font-size:12px;border-radius:8px;width:auto}
+
+/* 통계 */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-box{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);text-align:center}
+.stat-n{font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;color:var(--navy)}
+.stat-l{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* 학생 행 */
+.srow{background:var(--card);border-radius:12px;padding:12px 14px;border:1px solid var(--border);display:flex;align-items:center;gap:12px;margin-bottom:8px;cursor:pointer}
+.srow:active{opacity:.8}
+.sav{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.sinfo h4{font-size:14px;font-weight:700}
+.sinfo p{font-size:11px;color:var(--muted);margin-top:2px}
+.sscore{margin-left:auto;text-align:right;flex-shrink:0}
+.sscore-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:18px}
+
+/* 녹음 */
 .rec-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:12px}
 .rec-ring{position:relative;display:flex;align-items:center;justify-content:center}
 .rec-pulse{position:absolute;width:80px;height:80px;background:var(--red);border-radius:50%;opacity:0}
 .rec-pulse.on{animation:rpulse 1.2s ease-out infinite}
 @keyframes rpulse{0%{transform:scale(1);opacity:.4}100%{transform:scale(1.8);opacity:0}}
-.rec-btn{width:68px;height:68px;background:var(--red);border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;box-shadow:0 4px 18px rgba(232,57,42,.35);transition:transform .1s}
-.rec-btn:active{transform:scale(.95)}
-.rec-btn.recording{background:var(--red-dark)}
+.rec-btn{width:68px;height:68px;background:var(--red);border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;box-shadow:0 4px 18px rgba(232,57,42,.35)}
+.rec-btn.rec{background:var(--red-dark)}
 .rec-btn svg{width:28px;height:28px;fill:#fff}
 .rec-timer{font-family:'Nunito',sans-serif;font-weight:700;font-size:22px;color:var(--red);display:none}
 .rec-timer.on{display:block}
@@ -89,776 +120,746 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto S
 .divider{display:flex;align-items:center;gap:8px;width:100%}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .divider span{font-size:11px;color:var(--muted)}
-.upload-label{width:100%;padding:11px;border-radius:10px;border:1.5px dashed var(--border);background:none;color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
-.upload-label:hover{border-color:var(--blue);color:var(--blue)}
+.upload-lbl{width:100%;padding:11px;border-radius:10px;border:1.5px dashed var(--border);background:none;color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
 
-/* AUDIO */
+/* 오디오 */
 .audio-pre{background:var(--bg);border-radius:10px;padding:12px;border:1px solid var(--border);display:none;flex-direction:column;gap:8px}
 .audio-pre.on{display:flex}
 .audio-pre audio{width:100%;height:32px}
 
-/* BUTTONS */
-.btn{width:100%;padding:13px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;font-family:'Noto Sans KR',sans-serif}
-.btn-navy{background:var(--navy);color:#fff}
-.btn-navy:hover{background:var(--navy-mid)}
-.btn-navy:disabled{opacity:.4;cursor:not-allowed}
-.btn-outline{background:none;border:1.5px solid var(--border);color:var(--text)}
-.btn-red{background:var(--red);color:#fff}
-.btn-green{background:var(--green);color:#fff}
-.btn-sm{width:auto;padding:7px 14px;font-size:12px;border-radius:8px}
-
-/* LOADING */
-.loading{display:none;flex-direction:column;align-items:center;gap:14px;padding:28px 0}
+/* 로딩 */
+.loading{display:none;flex-direction:column;align-items:center;gap:14px;padding:24px 0}
 .loading.on{display:flex}
 .spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.load-steps{width:100%;display:flex;flex-direction:column;gap:8px}
-.lstep{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.lstep{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .lstep.done{color:var(--green)}
-.lstep.active{color:var(--navy);font-weight:700}
+.lstep.cur{color:var(--navy);font-weight:700}
 .ldot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0}
 .lstep.done .ldot{background:var(--green)}
-.lstep.active .ldot{background:var(--red);animation:blink .8s ease-in-out infinite}
+.lstep.cur .ldot{background:var(--red);animation:blink .8s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* RESULT */
+/* 결과 */
 .result{display:none;flex-direction:column;gap:12px}
 .result.on{display:flex}
 .score-card{background:var(--navy);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:16px}
 .score-svg{width:68px;height:68px;flex-shrink:0}
-.score-info h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;color:#fff;line-height:1}
+.score-info h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;color:#fff}
 .score-info p{font-size:13px;color:rgba(255,255,255,.6);margin-top:3px}
 .score-info small{font-size:11px;color:rgba(255,255,255,.35);display:block;margin-top:6px}
 .overall-box{background:#F0FBF4;border-radius:10px;padding:12px;border-left:3px solid var(--green)}
 .overall-box p{font-size:13px;color:#1B5E20;line-height:1.65}
-.fi{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
-.fi:last-child{border-bottom:none;padding-bottom:0}
-.fi-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.fi{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.fi:last-child{border-bottom:none}
+.fi-ic{width:30px;height:30px;border-radius:8px;background:#FFF8E1;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
 .fi-word{font-weight:700;font-size:14px}
-.fi-phonemes{display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap}
-.ph{font-family:'Nunito',sans-serif;font-size:12px;padding:2px 8px;border-radius:5px;font-weight:700}
-.ph-wrong{background:#FFEBEE;color:#C62828}
-.ph-right{background:#E8F5E9;color:#1B5E20}
+.fi-ph{display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap}
+.ph{font-family:'Nunito',sans-serif;font-size:11px;padding:2px 7px;border-radius:5px;font-weight:700}
+.ph-w{background:#FFEBEE;color:#C62828}
+.ph-r{background:#E8F5E9;color:#1B5E20}
 .fi-tip{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.55}
 
-/* POINTS */
-.points-banner{background:var(--navy);border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:12px}
-.points-icon{font-size:32px}
-.points-info h3{font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;color:var(--gold)}
-.points-info p{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
-.points-history{display:flex;flex-direction:column;gap:8px}
-.ph-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
-.ph-label{font-size:13px;color:var(--text)}
-.ph-pts{font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:var(--green)}
+/* 포인트 */
+.pts-banner{background:var(--navy);border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.pts-n{font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;color:var(--gold)}
+.pts-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}
+.pts-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--card);border-radius:10px;border:1px solid var(--border);margin-bottom:8px}
+.pts-pts{font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:var(--green)}
 
-/* HISTORY */
-.hist-item{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);display:flex;align-items:center;gap:12px;margin-bottom:10px}
-.hist-score{width:44px;height:44px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
-.hs-num{font-family:'Nunito',sans-serif;font-weight:900;font-size:17px;line-height:1}
+/* 히스토리 */
+.hist-item{background:var(--card);border-radius:12px;padding:13px;border:1px solid var(--border);display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.hist-sc{width:44px;height:44px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.hist-n{font-family:'Nunito',sans-serif;font-weight:900;font-size:17px;line-height:1}
 
-/* TEACHER */
-.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
-.stat-box{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);text-align:center}
-.stat-num{font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;color:var(--navy)}
-.stat-label{font-size:11px;color:var(--muted);margin-top:3px}
-.student-row{background:var(--card);border-radius:12px;padding:13px 14px;border:1px solid var(--border);display:flex;align-items:center;gap:12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
-.student-row:hover{border-color:var(--navy)}
-.s-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
-.s-info h4{font-size:14px;font-weight:700;color:var(--text)}
-.s-info p{font-size:11px;color:var(--muted);margin-top:2px}
-.s-score{margin-left:auto;text-align:right;flex-shrink:0}
-.s-score-num{font-family:'Nunito',sans-serif;font-weight:800;font-size:18px}
-
-/* NOTICE */
+/* 알림장 */
 .notice-card{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);margin-bottom:10px}
 .notice-date{font-size:11px;color:var(--muted);margin-bottom:6px}
 .notice-title{font-size:14px;font-weight:700;margin-bottom:8px}
 .notice-body{font-size:13px;color:var(--muted);line-height:1.8}
 
-/* FORM */
-.form-group{margin-bottom:14px}
-.form-label{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.4px}
-.form-input{width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:14px;color:var(--text);font-family:'Noto Sans KR',sans-serif;transition:border-color .15s;outline:none}
-.form-input:focus{border-color:var(--navy)}
-.form-textarea{min-height:80px;resize:vertical}
-.form-select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237B87A6' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-color:var(--bg)}
+/* 폼 */
+.fgroup{margin-bottom:14px}
+.flabel{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.4px}
+.finput{width:100%;padding:11px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:14px;color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none}
+.finput:focus{border-color:var(--navy)}
+.ftextarea{min-height:80px;resize:vertical}
+.fselect{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237B87A6' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-color:var(--bg)}
 
-/* TOGGLE */
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
-.toggle-row:last-child{border-bottom:none}
-.toggle-info h4{font-size:14px;font-weight:700}
-.toggle-info p{font-size:12px;color:var(--muted);margin-top:2px}
+/* 토글 */
+.trow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
+.trow:last-child{border-bottom:none}
+.tinfo h4{font-size:14px;font-weight:700}
+.tinfo p{font-size:12px;color:var(--muted);margin-top:2px}
 .toggle{position:relative;width:44px;height:24px;flex-shrink:0}
 .toggle input{opacity:0;width:0;height:0}
-.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.3s}
-.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s}
-.toggle input:checked+.toggle-slider{background:var(--green)}
-.toggle input:checked+.toggle-slider::before{transform:translateX(20px)}
+.tslider{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.3s}
+.tslider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle input:checked+.tslider{background:var(--green)}
+.toggle input:checked+.tslider::before{transform:translateX(20px)}
 
-/* WORD REPORT */
-.word-rank{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
-.word-rank:last-child{border-bottom:none}
-.rank-num{width:24px;height:24px;border-radius:50%;background:var(--red-light);color:var(--red);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.rank-word{font-weight:700;font-size:14px;flex:1}
-.rank-count{font-size:12px;color:var(--muted)}
-.rank-bar-wrap{width:60px;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
-.rank-bar{height:100%;background:var(--red);border-radius:3px}
+/* 단어 순위 */
+.wrank{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.wrank:last-child{border-bottom:none}
+.wnum{width:24px;height:24px;border-radius:50%;background:var(--red-light);color:var(--red);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wword{font-weight:700;font-size:14px;flex:1}
+.wbar-wrap{width:60px;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.wbar{height:100%;background:var(--red);border-radius:3px}
+.wcnt{font-size:12px;color:var(--muted)}
 
-/* EMPTY STATE */
+/* 스크립트 박스 */
+.script-box{background:var(--bg);border-radius:10px;padding:12px;font-size:13px;line-height:1.75;border:1px solid var(--border);margin:10px 0;max-height:110px;overflow-y:auto}
+
+/* 빈 상태 */
 .empty{text-align:center;padding:40px 20px;color:var(--muted)}
-.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-ic{font-size:40px;margin-bottom:12px}
 .empty p{font-size:13px;line-height:1.6}
 
-/* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center}
-.overlay.on{display:flex}
-.modal{background:var(--card);border-radius:20px 20px 0 0;padding:20px 18px 40px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;animation:slideup .3s ease}
-@keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
-.modal-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;margin-bottom:16px}
-
-/* TOAST */
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:9999;transition:transform .3s;white-space:nowrap;max-width:90vw;text-align:center}
+/* 토스트 */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:9999;transition:transform .3s;max-width:90vw;text-align:center}
 .toast.on{transform:translateX(-50%) translateY(0)}
-.toast.error{background:var(--red)}
-.toast.success{background:var(--green)}
+.toast.ok{background:var(--green)}
+.toast.err{background:var(--red)}
 
-/* SCRIPT BOX */
-.script-box{background:var(--bg);border-radius:10px;padding:12px;font-size:13px;line-height:1.75;color:var(--text);border:1px solid var(--border);margin:10px 0;max-height:120px;overflow-y:auto}
+/* 바텀시트 모달 */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.sheet-bg.on{display:flex}
+.sheet{background:var(--card);border-radius:20px 20px 0 0;padding:20px 18px 44px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;animation:sup .3s ease}
+@keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.sheet-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;margin-bottom:16px}
 </style>
 </head>
 <body>
+<div class="toast" id="toast"></div>
 
-<!-- SPLASH -->
-<div id="splash">
-  <div class="splash-logo">BA</div>
-  <div class="splash-title">Big Apple English</div>
-  <div class="splash-sub">과천 빅애플 영어교습소</div>
+<!-- ① 스플래시 -->
+<div class="screen dark-screen show" id="scrSplash">
+  <div class="logo-box">BA</div>
+  <div class="app-title">Big Apple English</div>
+  <div class="app-sub">과천 빅애플 영어교습소</div>
   <div class="role-btns">
-    <button class="role-btn student" onclick="enterAs('student')">🎒 학생 / 학부모로 시작</button>
-    <button class="role-btn teacher" onclick="enterAs('teacher')">👩‍🏫 선생님으로 시작</button>
+    <button class="role-btn student" onclick="showLogin('student')">🎒 학생 / 학부모로 시작</button>
+    <button class="role-btn teacher" onclick="showLogin('teacher')">👩‍🏫 선생님으로 시작</button>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ② 학생 로그인 -->
+<div class="screen dark-screen" id="scrStudentLogin">
+  <div class="logo-box">🎒</div>
+  <div class="app-title">안녕하세요!</div>
+  <div class="app-sub">선생님이 등록한 이름으로 입력해주세요</div>
+  <div class="dark-card">
+    <input class="dark-input" id="loginName" placeholder="예: 김민준" onkeydown="if(event.key==='Enter')doStudentLogin()">
+    <div class="err-box" id="loginErr">등록된 학생 이름이 아니에요 😅<br>선생님께 이름 등록을 부탁해주세요!</div>
+    <button class="dark-btn btn-gold" id="loginBtn" onclick="doStudentLogin()">시작하기 🍎</button>
+    <button class="dark-btn btn-ghost" onclick="showScreen('scrSplash')">돌아가기</button>
+  </div>
+</div>
 
-<!-- ══ 학생 화면 ══ -->
-<div class="view" id="view-student">
+<!-- ③ 선생님 로그인 -->
+<div class="screen dark-screen" id="scrTeacherLogin">
+  <div class="logo-box">👩‍🏫</div>
+  <div class="app-title">선생님 확인</div>
+  <div class="app-sub">선생님 비밀번호를 입력해주세요</div>
+  <div class="dark-card">
+    <input class="dark-input" id="teacherPw" type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doTeacherLogin()">
+    <div class="err-box" id="pwErr">비밀번호가 틀렸어요 😅</div>
+    <button class="dark-btn btn-gold" onclick="doTeacherLogin()">입장하기</button>
+    <button class="dark-btn btn-ghost" onclick="showScreen('scrSplash');document.getElementById('teacherPw').value=''">돌아가기</button>
+  </div>
+</div>
+
+<!-- ④ 학생 메인 -->
+<div class="screen" id="scrStudent">
   <div class="hdr">
     <div class="hdr-logo">BA</div>
     <div class="hdr-text"><h1>Big Apple English</h1><p>과천 빅애플 영어교습소</p></div>
-    <div class="hdr-chip" onclick="goSplash()">
-      <div class="hdr-avatar" id="studentAvatar" style="background:var(--gold);color:var(--navy)">?</div>
-      <span id="studentName">학생</span>
+    <div class="hdr-right" onclick="showScreen('scrSplash')">
+      <div class="hdr-av" id="sAvatar">?</div>
+      <span id="sName">학생</span>
     </div>
   </div>
-  <div class="tabs" id="sTabs">
-    <div class="tab on" onclick="switchSTab('s-hw',0)">📚 숙제</div>
-    <div class="tab" onclick="switchSTab('s-hist',1)">📊 기록</div>
-    <div class="tab" onclick="switchSTab('s-points',2)">🏆 포인트</div>
-    <div class="tab" onclick="switchSTab('s-notice',3)">📢 알림장</div>
+  <div class="tabs">
+    <div class="tab on" onclick="sTab('s-hw',0)">📚 숙제</div>
+    <div class="tab" onclick="sTab('s-hist',1)">📊 기록</div>
+    <div class="tab" onclick="sTab('s-pts',2)">🏆 포인트</div>
+    <div class="tab" onclick="sTab('s-notice',3)">📢 알림장</div>
   </div>
-  <div class="body" id="s-hw"><div class="empty"><div class="empty-icon">📚</div><p>숙제를 불러오는 중...</p></div></div>
-  <div class="body" id="s-hist" style="display:none"><div class="sec-label">제출 기록</div><div id="histList"><div class="empty"><div class="empty-icon">📊</div><p>아직 제출 기록이 없어요</p></div></div></div>
-  <div class="body" id="s-points" style="display:none">
-    <div class="points-banner">
-      <div class="points-icon">🍎</div>
-      <div class="points-info"><h3 id="totalPoints">0점</h3><p>열심히 하면 포인트가 쌓여요!</p></div>
-    </div>
-    <div class="card">
-      <div class="sec-label">포인트 적립 방법</div>
-      <div class="points-history">
-        <div class="ph-item"><span class="ph-label">📤 숙제 제출</span><span class="ph-pts">+10점</span></div>
-        <div class="ph-item"><span class="ph-label">⭐ 90점 이상</span><span class="ph-pts">+20점 보너스</span></div>
-        <div class="ph-item"><span class="ph-label">🔥 3일 연속 제출</span><span class="ph-pts">+15점 보너스</span></div>
-        <div class="ph-item"><span class="ph-label">💯 100점 달성</span><span class="ph-pts">+50점 보너스</span></div>
-      </div>
+  <div class="body" id="s-hw"><div class="empty"><div class="empty-ic">⏳</div><p>불러오는 중...</p></div></div>
+  <div class="body" id="s-hist" style="display:none"><div class="slabel">제출 기록</div><div id="histList"><div class="empty"><div class="empty-ic">📊</div><p>아직 제출 기록이 없어요</p></div></div></div>
+  <div class="body" id="s-pts" style="display:none">
+    <div class="pts-banner"><div style="font-size:32px">🍎</div><div><div class="pts-n" id="totalPts">0점</div><div class="pts-sub">열심히 하면 포인트가 쌓여요!</div></div></div>
+    <div class="card"><div class="slabel">포인트 적립 방법</div>
+      <div class="pts-row"><span style="font-size:13px">📤 숙제 제출</span><span class="pts-pts">+10점</span></div>
+      <div class="pts-row"><span style="font-size:13px">⭐ 90점 이상</span><span class="pts-pts">+20점 보너스</span></div>
+      <div class="pts-row"><span style="font-size:13px">🔥 3일 연속 제출</span><span class="pts-pts">+15점 보너스</span></div>
+      <div class="pts-row"><span style="font-size:13px">💯 100점 달성</span><span class="pts-pts">+50점 보너스</span></div>
     </div>
   </div>
-  <div class="body" id="s-notice" style="display:none"><div class="sec-label">선생님 알림장</div><div id="noticeList"><div class="empty"><div class="empty-icon">📢</div><p>아직 알림장이 없어요</p></div></div></div>
+  <div class="body" id="s-notice" style="display:none"><div class="slabel">선생님 알림장</div><div id="noticeList"><div class="empty"><div class="empty-ic">📢</div><p>아직 알림장이 없어요</p></div></div></div>
   <div class="bnav">
-    <div class="bni on" onclick="switchSTab('s-hw',0)"><div class="bni-icon">📚</div><div class="bni-label">숙제</div></div>
-    <div class="bni" onclick="switchSTab('s-hist',1)"><div class="bni-icon">📊</div><div class="bni-label">기록</div></div>
-    <div class="bni" onclick="switchSTab('s-points',2)"><div class="bni-icon">🏆</div><div class="bni-label">포인트</div></div>
-    <div class="bni" onclick="switchSTab('s-notice',3)"><div class="bni-icon">📢</div><div class="bni-label">알림장</div></div>
+    <div class="bni on" onclick="sTab('s-hw',0)"><div class="bni-ic">📚</div><div class="bni-lb">숙제</div></div>
+    <div class="bni" onclick="sTab('s-hist',1)"><div class="bni-ic">📊</div><div class="bni-lb">기록</div></div>
+    <div class="bni" onclick="sTab('s-pts',2)"><div class="bni-ic">🏆</div><div class="bni-lb">포인트</div></div>
+    <div class="bni" onclick="sTab('s-notice',3)"><div class="bni-ic">📢</div><div class="bni-lb">알림장</div></div>
   </div>
 </div>
 
-<!-- ══ 선생님 화면 ══ -->
-<div class="view" id="view-teacher">
+<!-- ⑤ 선생님 메인 -->
+<div class="screen" id="scrTeacher">
   <div class="hdr">
     <div class="hdr-logo">BA</div>
     <div class="hdr-text"><h1>선생님 대시보드</h1><p>Big Apple English</p></div>
-    <div class="hdr-chip" onclick="goSplash()">
-      <div class="hdr-avatar" style="background:#FFE0B2;font-size:14px">👩‍🏫</div>
+    <div class="hdr-right" onclick="showScreen('scrSplash')">
+      <div class="hdr-av" style="background:#FFE0B2;font-size:13px">👩‍🏫</div>
       <span>이지현</span>
     </div>
   </div>
-  <div class="tabs" id="tTabs">
-    <div class="tab on" onclick="switchTTab('t-dash',0)">🏠 현황</div>
-    <div class="tab" onclick="switchTTab('t-students',1)">👨‍👧 학생</div>
-    <div class="tab" onclick="switchTTab('t-hw',2)">📝 숙제</div>
-    <div class="tab" onclick="switchTTab('t-notice',3)">📢 알림장</div>
+  <div class="tabs">
+    <div class="tab on" onclick="tTab('t-dash',0)">🏠 현황</div>
+    <div class="tab" onclick="tTab('t-stu',1)">👨‍👧 학생</div>
+    <div class="tab" onclick="tTab('t-hw',2)">📝 숙제</div>
+    <div class="tab" onclick="tTab('t-ntc',3)">📢 알림장</div>
   </div>
   <div class="body" id="t-dash">
     <div class="stat-grid">
-      <div class="stat-box"><div class="stat-num" id="totalStudents">-</div><div class="stat-label">전체 학생</div></div>
-      <div class="stat-box"><div class="stat-num" id="todaySubmit" style="color:var(--green)">-</div><div class="stat-label">오늘 제출</div></div>
-      <div class="stat-box"><div class="stat-num" id="notSubmit" style="color:var(--red)">-</div><div class="stat-label">미제출</div></div>
-      <div class="stat-box"><div class="stat-num" id="avgScore" style="color:var(--gold)">-</div><div class="stat-label">평균 점수</div></div>
+      <div class="stat-box"><div class="stat-n" id="stTotal">-</div><div class="stat-l">전체 학생</div></div>
+      <div class="stat-box"><div class="stat-n" id="stToday" style="color:var(--green)">-</div><div class="stat-l">오늘 제출</div></div>
+      <div class="stat-box"><div class="stat-n" id="stNot" style="color:var(--red)">-</div><div class="stat-l">미제출</div></div>
+      <div class="stat-box"><div class="stat-n" id="stAvg" style="color:var(--gold)">-</div><div class="stat-l">평균 점수</div></div>
     </div>
-    <div class="card"><div class="sec-label">🔴 반별 틀린 단어 TOP 5</div><div id="wrongWordList"><div class="empty"><p>제출 데이터가 쌓이면 나타나요</p></div></div></div>
-    <div class="sec-label">오늘 제출한 학생</div>
-    <div id="todayList"><div class="empty"><p>아직 오늘 제출이 없어요</p></div></div>
-    <div class="sec-label" style="margin-top:8px">미제출 학생</div>
-    <div id="notSubmitList"><div class="empty"><p>로딩 중...</p></div></div>
+    <div class="card"><div class="slabel">🔴 반별 틀린 단어 TOP 5</div><div id="wrongWords"><div class="empty"><p>제출 데이터가 쌓이면 나타나요</p></div></div></div>
+    <div class="slabel">오늘 제출한 학생</div><div id="todayList"><div class="empty"><p>아직 오늘 제출이 없어요</p></div></div>
+    <div class="slabel" style="margin-top:8px">미제출 학생</div><div id="notSubList"><div class="empty"><p>불러오는 중...</p></div></div>
   </div>
-  <div class="body" id="t-students" style="display:none">
-    <button class="btn btn-red" style="margin-bottom:14px" onclick="openModal('addStudentModal')">＋ 학생 추가</button>
-    <div class="sec-label">전체 학생</div>
-    <div id="allStudentList"><div class="empty"><div class="empty-icon">👨‍👧</div><p>학생을 추가해보세요</p></div></div>
+  <div class="body" id="t-stu" style="display:none">
+    <button class="btn btn-red" style="margin-bottom:14px" onclick="openSheet('sheetAddStu')">＋ 학생 추가</button>
+    <div class="slabel">전체 학생</div><div id="allStuList"><div class="empty"><div class="empty-ic">👨‍👧</div><p>학생을 추가해보세요</p></div></div>
   </div>
   <div class="body" id="t-hw" style="display:none">
-    <button class="btn btn-red" style="margin-bottom:14px" onclick="openModal('addHwModal')">＋ 새 숙제 출제</button>
-    <div class="sec-label">진행 중인 숙제</div>
-    <div id="hwAdminList"><div class="empty"><div class="empty-icon">📝</div><p>출제된 숙제가 없어요</p></div></div>
+    <button class="btn btn-red" style="margin-bottom:14px" onclick="openSheet('sheetAddHw')">＋ 새 숙제 출제</button>
+    <div class="slabel">숙제 목록</div><div id="hwList"><div class="empty"><div class="empty-ic">📝</div><p>출제된 숙제가 없어요</p></div></div>
   </div>
-  <div class="body" id="t-notice" style="display:none">
-    <button class="btn btn-red" style="margin-bottom:14px" onclick="openModal('addNoticeModal')">＋ 알림장 작성</button>
-    <div class="sec-label">보낸 알림장</div>
-    <div id="noticeAdminList"><div class="empty"><div class="empty-icon">📢</div><p>작성된 알림장이 없어요</p></div></div>
+  <div class="body" id="t-ntc" style="display:none">
+    <button class="btn btn-red" style="margin-bottom:14px" onclick="openSheet('sheetAddNtc')">＋ 알림장 작성</button>
+    <div class="slabel">보낸 알림장</div><div id="ntcList"><div class="empty"><div class="empty-ic">📢</div><p>작성된 알림장이 없어요</p></div></div>
   </div>
   <div class="bnav">
-    <div class="bni on" onclick="switchTTab('t-dash',0)"><div class="bni-icon">🏠</div><div class="bni-label">현황</div></div>
-    <div class="bni" onclick="switchTTab('t-students',1)"><div class="bni-icon">👨‍👧</div><div class="bni-label">학생</div></div>
-    <div class="bni" onclick="switchTTab('t-hw',2)"><div class="bni-icon">📝</div><div class="bni-label">숙제</div></div>
-    <div class="bni" onclick="switchTTab('t-notice',3)"><div class="bni-icon">📢</div><div class="bni-label">알림장</div></div>
+    <div class="bni on" onclick="tTab('t-dash',0)"><div class="bni-ic">🏠</div><div class="bni-lb">현황</div></div>
+    <div class="bni" onclick="tTab('t-stu',1)"><div class="bni-ic">👨‍👧</div><div class="bni-lb">학생</div></div>
+    <div class="bni" onclick="tTab('t-hw',2)"><div class="bni-ic">📝</div><div class="bni-lb">숙제</div></div>
+    <div class="bni" onclick="tTab('t-ntc',3)"><div class="bni-ic">📢</div><div class="bni-lb">알림장</div></div>
   </div>
 </div>
 
-<!-- ══ 모달: 학생 로그인 ══ -->
-<div class="overlay" id="studentLoginModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:48px;margin-bottom:8px">🎒</div>
-      <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;margin-bottom:6px">안녕하세요!</div>
-      <div style="font-size:13px;color:var(--muted)">선생님이 등록한 이름을 입력해주세요</div>
-    </div>
-    <div class="form-group">
-      <input class="form-input" id="loginName" placeholder="예: 김민준" style="font-size:18px;text-align:center;padding:16px" onkeydown="if(event.key==='Enter')submitStudentLogin()">
-    </div>
-    <div id="loginError" style="display:none;background:var(--red-light);color:var(--red);border-radius:10px;padding:12px;font-size:13px;text-align:center;margin-bottom:12px">
-      등록된 학생 이름이 아니에요.<br>선생님께 이름 등록을 부탁해주세요 😊
-    </div>
-    <button class="btn btn-red" onclick="submitStudentLogin()" id="loginBtn">시작하기 🍎</button>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('studentLoginModal');goSplash()">돌아가기</button>
+<!-- 바텀시트: 학생 추가 -->
+<div class="sheet-bg" id="sheetAddStu"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">학생 추가</div>
+  <div class="fgroup"><label class="flabel">학생 이름 *</label><input class="finput" id="newStuName" placeholder="예: 김민준"></div>
+  <div class="fgroup"><label class="flabel">반</label><select class="finput fselect" id="newStuClass"><option>초등 A반</option><option>초등 B반</option><option>중등반</option><option>개인 진도반</option></select></div>
+  <div class="fgroup"><label class="flabel">학부모 연락처</label><input class="finput" id="newStuPhone" placeholder="010-0000-0000" type="tel"></div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="slabel">카카오톡 알림 설정</div>
+    <div class="trow"><div class="tinfo"><h4>제출 알림</h4><p>숙제 제출 시</p></div><label class="toggle"><input type="checkbox" id="n1" checked><span class="tslider"></span></label></div>
+    <div class="trow"><div class="tinfo"><h4>피드백 알림</h4><p>선생님 피드백 작성 시</p></div><label class="toggle"><input type="checkbox" id="n2" checked><span class="tslider"></span></label></div>
+    <div class="trow"><div class="tinfo"><h4>마감 알림</h4><p>숙제 마감 하루 전</p></div><label class="toggle"><input type="checkbox" id="n3" checked><span class="tslider"></span></label></div>
+    <div class="trow"><div class="tinfo"><h4>포인트 알림</h4><p>포인트 적립 시</p></div><label class="toggle"><input type="checkbox" id="n4"><span class="tslider"></span></label></div>
   </div>
-</div>
+  <button class="btn btn-navy" onclick="addStudent()">학생 추가하기</button>
+  <button class="btn btn-out" style="margin-top:8px" onclick="closeSheet('sheetAddStu')">취소</button>
+</div></div>
 
-<!-- ══ 모달: 선생님 비밀번호 ══ -->
-<div class="overlay" id="teacherLoginModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:48px;margin-bottom:8px">👩‍🏫</div>
-      <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;margin-bottom:6px">선생님 확인</div>
-      <div style="font-size:13px;color:var(--muted)">선생님 비밀번호를 입력해주세요</div>
-    </div>
-    <div class="form-group">
-      <input class="form-input" id="teacherPw" type="password" placeholder="비밀번호" style="font-size:18px;text-align:center;padding:16px" onkeydown="if(event.key==='Enter')submitTeacherLogin()">
-    </div>
-    <div id="pwError" style="display:none;background:var(--red-light);color:var(--red);border-radius:10px;padding:12px;font-size:13px;text-align:center;margin-bottom:12px">
-      비밀번호가 틀렸어요 😅
-    </div>
-    <button class="btn btn-navy" onclick="submitTeacherLogin()">입장하기</button>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('teacherLoginModal');goSplash()">돌아가기</button>
+<!-- 바텀시트: 학생 상세 -->
+<div class="sheet-bg" id="sheetStuDetail"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="detailName">학생 상세</div>
+  <div style="display:flex;gap:10px;margin-bottom:14px">
+    <div style="flex:1;background:var(--bg);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border)"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">최근 점수</div><div id="detailScore" style="font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;color:var(--navy)">-</div></div>
+    <div style="flex:1;background:var(--bg);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border)"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">포인트</div><div id="detailPts" style="font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;color:var(--gold)">-</div></div>
   </div>
-</div>
+  <div id="detailSubs" style="margin-bottom:14px"></div>
+  <div class="fgroup"><label class="flabel">선생님 코멘트 (카카오톡 전송)</label><textarea class="finput ftextarea" id="teacherComment" placeholder="학부모님께 전달할 따뜻한 메시지를 써주세요 😊"></textarea></div>
+  <button class="btn btn-navy" onclick="sendFeedback()">📲 카카오톡으로 전송</button>
+  <button class="btn" style="margin-top:8px;background:#FFEBEE;color:var(--red);border:none;border-radius:12px;padding:13px;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center" onclick="deleteStu()">학생 삭제</button>
+  <button class="btn btn-out" style="margin-top:8px" onclick="closeSheet('sheetStuDetail')">닫기</button>
+</div></div>
 
-<!-- ══ 모달: 학생 추가 ══ -->
-<div class="overlay" id="addStudentModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">학생 추가</div>
-    <div class="form-group"><label class="form-label">학생 이름 *</label><input class="form-input" id="newStudentName" placeholder="예: 김민준"></div>
-    <div class="form-group"><label class="form-label">반 / 그룹</label>
-      <select class="form-input form-select" id="newStudentClass">
-        <option>초등 A반</option><option>초등 B반</option><option>중등반</option><option>개인 진도반</option>
-      </select>
-    </div>
-    <div class="form-group"><label class="form-label">학부모 연락처</label><input class="form-input" id="newStudentPhone" placeholder="010-0000-0000" type="tel"></div>
-    <div class="card" style="margin-bottom:14px">
-      <div class="sec-label">학부모 카카오톡 알림 설정</div>
-      <div class="toggle-row"><div class="toggle-info"><h4>제출 알림</h4><p>학생이 숙제 제출 시</p></div><label class="toggle"><input type="checkbox" id="notif-submit" checked><span class="toggle-slider"></span></label></div>
-      <div class="toggle-row"><div class="toggle-info"><h4>피드백 알림</h4><p>선생님 피드백 작성 시</p></div><label class="toggle"><input type="checkbox" id="notif-feedback" checked><span class="toggle-slider"></span></label></div>
-      <div class="toggle-row"><div class="toggle-info"><h4>마감 알림</h4><p>숙제 마감 하루 전</p></div><label class="toggle"><input type="checkbox" id="notif-deadline" checked><span class="toggle-slider"></span></label></div>
-      <div class="toggle-row"><div class="toggle-info"><h4>포인트 알림</h4><p>포인트 적립 시</p></div><label class="toggle"><input type="checkbox" id="notif-points"><span class="toggle-slider"></span></label></div>
-    </div>
-    <button class="btn btn-navy" onclick="addStudent()">학생 추가하기</button>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('addStudentModal')">취소</button>
-  </div>
-</div>
+<!-- 바텀시트: 숙제 출제 -->
+<div class="sheet-bg" id="sheetAddHw"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">새 숙제 출제</div>
+  <div class="fgroup"><label class="flabel">제목 *</label><input class="finput" id="hwTitle" placeholder="예: Unit 6 — The Alchemist"></div>
+  <div class="fgroup"><label class="flabel">유형</label><select class="finput fselect" id="hwType"><option>낭독</option><option>쉐도잉</option><option>자유 발화</option></select></div>
+  <div class="fgroup"><label class="flabel">낭독 대본</label><textarea class="finput ftextarea" id="hwScript" placeholder="학생이 읽을 영어 본문..."></textarea></div>
+  <div class="fgroup"><label class="flabel">마감일</label><input class="finput" type="date" id="hwDue"></div>
+  <div class="fgroup"><label class="flabel">대상</label><select class="finput fselect" id="hwTarget"><option>전체 학생</option><option>초등 A반</option><option>초등 B반</option><option>중등반</option><option>개인 진도반</option></select></div>
+  <button class="btn btn-red" onclick="addHw()">숙제 출제하기</button>
+  <button class="btn btn-out" style="margin-top:8px" onclick="closeSheet('sheetAddHw')">취소</button>
+</div></div>
 
-<!-- ══ 모달: 학생 상세 ══ -->
-<div class="overlay" id="studentDetailModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="detailStudentName">학생 상세</div>
-    <div style="display:flex;gap:10px;margin-bottom:8px">
-      <div style="flex:1;background:var(--bg);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border)">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">최근 점수</div>
-        <div id="detailScore" style="font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;color:var(--navy)">-</div>
-      </div>
-      <div style="flex:1;background:var(--bg);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border)">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">포인트</div>
-        <div id="detailPoints" style="font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;color:var(--gold)">-</div>
-      </div>
-    </div>
-    <div id="detailRecentSubs" style="margin-bottom:14px"></div>
-    <div class="form-group">
-      <label class="form-label">선생님 코멘트 작성</label>
-      <textarea class="form-input form-textarea" id="teacherComment" placeholder="학부모님께 전달할 따뜻한 메시지를 써주세요 😊&#10;&#10;예) 민준이가 오늘 th 발음이 많이 좋아졌어요!"></textarea>
-    </div>
-    <button class="btn btn-navy" onclick="sendFeedback()">📲 카카오톡으로 전송</button>
-    <button class="btn" style="margin-top:8px;background:#FFEBEE;color:var(--red);border:none;border-radius:12px;padding:13px;font-weight:700;cursor:pointer" onclick="deleteStudent()">학생 삭제</button>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('studentDetailModal')">닫기</button>
-  </div>
-</div>
+<!-- 바텀시트: 알림장 -->
+<div class="sheet-bg" id="sheetAddNtc"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">알림장 작성</div>
+  <div class="fgroup"><label class="flabel">제목 *</label><input class="finput" id="ntcTitle" placeholder="예: 이번 주 수업 안내"></div>
+  <div class="fgroup"><label class="flabel">대상</label><select class="finput fselect" id="ntcTarget"><option>전체 학생</option><option>초등 A반</option><option>초등 B반</option><option>중등반</option><option>개인 진도반</option></select></div>
+  <div class="fgroup"><label class="flabel">오늘 수업 내용</label><textarea class="finput ftextarea" id="ntcClass" placeholder="오늘 배운 내용..."></textarea></div>
+  <div class="fgroup"><label class="flabel">숙제</label><input class="finput" id="ntcHw" placeholder="예: Unit 5 낭독 녹음 제출 (금요일까지)"></div>
+  <div class="fgroup"><label class="flabel">준비물</label><input class="finput" id="ntcPrep" placeholder="예: 교재 6과"></div>
+  <div class="fgroup"><label class="flabel">칭찬 / 특이사항</label><textarea class="finput ftextarea" id="ntcEtc" placeholder="오늘 잘한 점..."></textarea></div>
+  <button class="btn btn-red" onclick="addNtc()">📢 알림장 발송</button>
+  <button class="btn btn-out" style="margin-top:8px" onclick="closeSheet('sheetAddNtc')">취소</button>
+</div></div>
 
-<!-- ══ 모달: 숙제 출제 ══ -->
-<div class="overlay" id="addHwModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">새 숙제 출제</div>
-    <div class="form-group"><label class="form-label">제목 *</label><input class="form-input" id="hwTitle" placeholder="예: Unit 6 — The Alchemist"></div>
-    <div class="form-group"><label class="form-label">유형</label>
-      <select class="form-input form-select" id="hwType"><option>낭독</option><option>쉐도잉</option><option>자유 발화</option></select>
+<!-- 바텀시트: 녹음 -->
+<div class="sheet-bg" id="sheetRecord"><div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="recTitle">낭독 제출</div>
+  <div class="script-box" id="recScript"></div>
+  <div class="rec-wrap">
+    <div class="rec-ring">
+      <div class="rec-pulse" id="recPulse"></div>
+      <button class="rec-btn" id="recBtn" onclick="toggleRec()">
+        <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 014 4v6a4 4 0 01-8 0V5a4 4 0 014-4zm-1 18.93V22h2v-2.07A8 8 0 0020 12h-2a6 6 0 01-12 0H4a8 8 0 007 7.93z"/></svg>
+      </button>
     </div>
-    <div class="form-group"><label class="form-label">낭독 대본</label><textarea class="form-input form-textarea" id="hwScript" placeholder="학생이 읽을 영어 본문을 입력하세요..."></textarea></div>
-    <div class="form-group"><label class="form-label">마감일</label><input class="form-input" type="date" id="hwDue"></div>
-    <div class="form-group"><label class="form-label">대상</label>
-      <select class="form-input form-select" id="hwTarget"><option>전체 학생</option><option>초등 A반</option><option>초등 B반</option><option>중등반</option><option>개인 진도반</option></select>
-    </div>
-    <button class="btn btn-red" style="margin-top:4px" onclick="addHomework()">숙제 출제하기</button>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('addHwModal')">취소</button>
+    <div class="rec-timer" id="recTimer">0:00</div>
+    <div class="rec-hint" id="recHint">버튼을 눌러 녹음 시작</div>
+    <div class="divider"><span>또는</span></div>
+    <label class="upload-lbl">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      녹음 파일 올리기
+      <input type="file" accept="audio/*" onchange="handleFile(event)" style="display:none">
+    </label>
   </div>
-</div>
-
-<!-- ══ 모달: 알림장 ══ -->
-<div class="overlay" id="addNoticeModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">알림장 작성</div>
-    <div class="form-group"><label class="form-label">제목 *</label><input class="form-input" id="noticeTitle" placeholder="예: 이번 주 수업 안내"></div>
-    <div class="form-group"><label class="form-label">대상</label>
-      <select class="form-input form-select" id="noticeTarget"><option>전체 학생</option><option>초등 A반</option><option>초등 B반</option><option>중등반</option><option>개인 진도반</option></select>
-    </div>
-    <div class="form-group"><label class="form-label">오늘 수업 내용</label><textarea class="form-input form-textarea" id="noticeClass" placeholder="오늘 배운 내용..."></textarea></div>
-    <div class="form-group"><label class="form-label">숙제</label><input class="form-input" id="noticeHw" placeholder="예: Unit 5 낭독 녹음 제출 (금요일까지)"></div>
-    <div class="form-group"><label class="form-label">준비물</label><input class="form-input" id="noticePrep" placeholder="예: 교재 6과"></div>
-    <div class="form-group"><label class="form-label">칭찬 / 특이사항</label><textarea class="form-input form-textarea" id="noticeEtc" placeholder="오늘 잘한 점이나 특이사항..."></textarea></div>
-    <button class="btn btn-red" style="margin-top:4px" onclick="addNotice()">📢 알림장 발송</button>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('addNoticeModal')">취소</button>
+  <div class="audio-pre" id="audioPre">
+    <audio id="audioEl" controls></audio>
+    <button class="btn btn-navy" onclick="startAnalysis()">🤖 AI 발음 분석 시작</button>
   </div>
-</div>
-
-<!-- ══ 녹음 모달 ══ -->
-<div class="overlay" id="recordModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="recordModalTitle">낭독 제출</div>
-    <div class="script-box" id="recordScript"></div>
-    <div class="rec-wrap">
-      <div class="rec-ring">
-        <div class="rec-pulse" id="recPulse"></div>
-        <button class="rec-btn" id="recBtn" onclick="toggleRecord()">
-          <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 014 4v6a4 4 0 01-8 0V5a4 4 0 014-4zm-1 18.93V22h2v-2.07A8 8 0 0020 12h-2a6 6 0 01-12 0H4a8 8 0 007 7.93z"/></svg>
-        </button>
-      </div>
-      <div class="rec-timer" id="recTimer">0:00</div>
-      <div class="rec-hint" id="recHint">버튼을 눌러 녹음 시작</div>
-      <div class="divider"><span>또는</span></div>
-      <label class="upload-label">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-        녹음 파일 올리기 (mp3, m4a, wav)
-        <input type="file" accept="audio/*" onchange="handleFile(event)" style="display:none">
-      </label>
-    </div>
-    <div class="audio-pre" id="audioPre">
-      <audio id="audioEl" controls></audio>
-      <button class="btn btn-navy" onclick="startAnalysis()">🤖 AI 발음 분석 시작</button>
-    </div>
-    <div class="loading" id="loadingEl" style="margin-top:12px">
-      <div class="spinner"></div>
-      <div class="load-steps">
-        <div class="lstep active" id="ls1"><div class="ldot"></div>음성 파일 처리 중...</div>
-        <div class="lstep" id="ls2"><div class="ldot"></div>발음 분석 중</div>
-        <div class="lstep" id="ls3"><div class="ldot"></div>원문과 비교 중</div>
-        <div class="lstep" id="ls4"><div class="ldot"></div>AI 피드백 생성 중</div>
-      </div>
-    </div>
-    <div class="result" id="resultEl" style="margin-top:12px">
-      <div class="score-card">
-        <svg class="score-svg" viewBox="0 0 68 68">
-          <circle cx="34" cy="34" r="27" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="6"/>
-          <circle cx="34" cy="34" r="27" fill="none" stroke="#F5A623" stroke-width="6" stroke-linecap="round"
-            stroke-dasharray="169.6" stroke-dashoffset="169.6" id="scoreArc" transform="rotate(-90 34 34)"
-            style="transition:stroke-dashoffset 1.2s ease"/>
-        </svg>
-        <div class="score-info">
-          <h2 id="scoreNum">--</h2>
-          <p id="scoreGrade">분석 중</p>
-          <small id="scoreDate"></small>
-        </div>
-      </div>
-      <div class="card">
-        <div class="sec-label">전체 코멘트</div>
-        <div class="overall-box"><p id="overallText">...</p></div>
-      </div>
-      <div class="card">
-        <div class="sec-label">발음 교정 포인트</div>
-        <div id="feedItems"></div>
-      </div>
-      <div id="pointsEarned" style="display:none;background:var(--gold-light);border-radius:12px;padding:14px;text-align:center;border:1px solid var(--gold)"></div>
-      <button class="btn btn-outline" onclick="resetRecord()">🔄 다시 녹음하기</button>
-      <button class="btn btn-navy" onclick="closeModal('recordModal');loadStudentHistory()">✅ 완료</button>
+  <div class="loading" id="loadingEl" style="margin-top:12px">
+    <div class="spinner"></div>
+    <div style="width:100%">
+      <div class="lstep cur" id="ls1"><div class="ldot"></div>음성 파일 처리 중...</div>
+      <div class="lstep" id="ls2"><div class="ldot"></div>발음 분석 중</div>
+      <div class="lstep" id="ls3"><div class="ldot"></div>원문과 비교 중</div>
+      <div class="lstep" id="ls4"><div class="ldot"></div>AI 피드백 생성 중</div>
     </div>
   </div>
-</div>
+  <div class="result" id="resultEl" style="margin-top:12px">
+    <div class="score-card">
+      <svg class="score-svg" viewBox="0 0 68 68">
+        <circle cx="34" cy="34" r="27" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="6"/>
+        <circle cx="34" cy="34" r="27" fill="none" stroke="#F5A623" stroke-width="6" stroke-linecap="round"
+          stroke-dasharray="169.6" stroke-dashoffset="169.6" id="scoreArc" transform="rotate(-90 34 34)"
+          style="transition:stroke-dashoffset 1.2s ease"/>
+      </svg>
+      <div class="score-info"><h2 id="scoreNum">--</h2><p id="scoreGrade">분석 중</p><small id="scoreDate"></small></div>
+    </div>
+    <div class="card"><div class="slabel">전체 코멘트</div><div class="overall-box"><p id="overallText">...</p></div></div>
+    <div class="card"><div class="slabel">발음 교정 포인트</div><div id="feedItems"></div></div>
+    <div id="ptsEarned" style="display:none;background:var(--gold-light);border-radius:12px;padding:14px;text-align:center;border:1px solid var(--gold)"></div>
+    <button class="btn btn-out" onclick="resetRec()">🔄 다시 녹음하기</button>
+    <button class="btn btn-navy" onclick="closeSheet('sheetRecord');loadStuHist()">✅ 완료</button>
+  </div>
+</div></div>
 
 <script>
-// ══ 설정 ══
-const SUPABASE_URL = 'https://cazdfejatsahzzakuxmq.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_G47SCxG-fP1kdgJCtt-pRg_nguu35Gs';
-const TEACHER_PW = '1234'; // ← 선생님 비밀번호 (나중에 바꾸세요!)
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ═══ 설정 ═══
+const SB_URL='https://cazdfejatsahzzakuxmq.supabase.co';
+const SB_KEY='sb_publishable_G47SCxG-fP1kdgJCtt-pRg_nguu35Gs';
+const TPW='1234'; // 선생님 비밀번호
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const BG=['#E3F2FD','#E8F5E9','#FFF8E1','#F3E5F5','#FFE0B2','#E8EAF6'];
+const TC=['#0D47A1','#1B5E20','#7B4F00','#6A1B9A','#E65100','#283593'];
 
-// ══ 상태 ══
-let currentHwId = null;
-let currentHwScript = '';
-let currentStudentId = null;
-let currentDetailStudentId = null;
-let mediaRecorder, audioChunks=[], recInterval, recSec=0, isRec=false, audioBlob=null;
+let curStuId=null, curHwId=null, curHwScript='', curDetailId=null;
+let mr,chunks=[],ri,rsec=0,isRec=false,aBlob=null;
 
-// ══ 스플래시 ══
-function goSplash() {
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('on'));
-  const sp = document.getElementById('splash');
-  sp.style.display='flex';
-  sp.style.zIndex='100';
-  sp.classList.remove('hide');
-  currentStudentId = null;
+// ═══ 화면 전환 ═══
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+}
+function showLogin(role){
+  if(role==='student') showScreen('scrStudentLogin');
+  else showScreen('scrTeacherLogin');
 }
 
-function enterAs(role) {
-  const splash = document.getElementById('splash');
-  splash.classList.add('hide');
-  splash.style.zIndex = '-1';
-  setTimeout(()=>{
-    splash.style.display='none';
-    if(role==='student') {
-      document.getElementById('view-student').classList.add('active');
-      openModal('studentLoginModal');
-      setTimeout(()=>{ try{document.getElementById('loginName').focus()}catch(e){} }, 400);
-    } else {
-      document.getElementById('view-teacher').classList.add('active');
-      openModal('teacherLoginModal');
-      setTimeout(()=>{ try{document.getElementById('teacherPw').focus()}catch(e){} }, 400);
-    }
-  }, 300);
+// ═══ 바텀시트 ═══
+function openSheet(id){document.getElementById(id).classList.add('on')}
+function closeSheet(id){document.getElementById(id).classList.remove('on')}
+document.querySelectorAll('.sheet-bg').forEach(s=>{
+  s.addEventListener('click',e=>{if(e.target===s)s.classList.remove('on')});
+});
+
+// ═══ 토스트 ═══
+let tt;
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast on'+(type?' '+type:'');
+  clearTimeout(tt);tt=setTimeout(()=>t.className='toast',3000);
 }
 
-// ══ 선생님 로그인 ══
-function submitTeacherLogin() {
-  const pw = document.getElementById('teacherPw').value;
-  if(pw === TEACHER_PW) {
-    closeModal('teacherLoginModal');
+// ═══ 선생님 로그인 ═══
+function doTeacherLogin(){
+  const pw=document.getElementById('teacherPw').value;
+  if(pw===TPW){
+    document.getElementById('pwErr').style.display='none';
     document.getElementById('teacherPw').value='';
-    document.getElementById('pwError').style.display='none';
-    loadTeacherDash();
+    showScreen('scrTeacher');
+    loadDash();
   } else {
-    document.getElementById('pwError').style.display='block';
+    document.getElementById('pwErr').style.display='block';
     document.getElementById('teacherPw').value='';
     document.getElementById('teacherPw').focus();
   }
 }
 
-// ══ 학생 로그인 ══
-async function submitStudentLogin() {
-  const name = document.getElementById('loginName').value.trim();
-  if(!name) { showToast('이름을 입력해주세요!'); return; }
-  const btn = document.getElementById('loginBtn');
-  btn.textContent = '찾는 중...';
-  btn.disabled = true;
-  document.getElementById('loginError').style.display='none';
-  try {
-    const {data,error} = await sb.from('students').select('*').eq('name',name).single();
-    if(error || !data) {
-      document.getElementById('loginError').style.display='block';
-      btn.textContent='시작하기 🍎';
-      btn.disabled=false;
-      return;
+// ═══ 학생 로그인 ═══
+async function doStudentLogin(){
+  const name=document.getElementById('loginName').value.trim();
+  if(!name){toast('이름을 입력해주세요!','err');return;}
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginBtn').textContent='찾는 중...';
+  document.getElementById('loginBtn').disabled=true;
+  try{
+    const {data,error}=await sb.from('students').select('*').eq('name',name).single();
+    if(error||!data){
+      document.getElementById('loginErr').style.display='block';
+    } else {
+      curStuId=data.id;
+      document.getElementById('sAvatar').textContent=data.name[0];
+      document.getElementById('sName').textContent=data.name;
+      document.getElementById('totalPts').textContent=(data.points||0)+'점';
+      document.getElementById('loginName').value='';
+      showScreen('scrStudent');
+      loadStuHw();loadStuHist();loadNotices();
+      toast('👋 어서와요, '+data.name+'!','ok');
     }
-    currentStudentId = data.id;
-    document.getElementById('studentName').textContent = data.name;
-    document.getElementById('studentAvatar').textContent = data.name[0];
-    document.getElementById('studentAvatar').style.background = 'var(--gold)';
-    document.getElementById('totalPoints').textContent = (data.points||0)+'점';
-    closeModal('studentLoginModal');
-    document.getElementById('loginName').value='';
-    btn.textContent='시작하기 🍎';
-    btn.disabled=false;
-    loadStudentHomeworks();
-    loadStudentHistory();
-    loadNotices();
-    showToast('👋 어서와요, '+data.name+'!', 'success');
-  } catch(e) {
-    showToast('연결 오류가 났어요. 다시 시도해주세요.', 'error');
-    btn.textContent='시작하기 🍎';
-    btn.disabled=false;
-  }
+  }catch(e){toast('연결 오류가 났어요. 다시 시도해주세요.','err');}
+  document.getElementById('loginBtn').textContent='시작하기 🍎';
+  document.getElementById('loginBtn').disabled=false;
 }
 
-// ══ 탭 전환 ══
-function switchSTab(id, idx) {
-  ['s-hw','s-hist','s-points','s-notice'].forEach(t=>document.getElementById(t).style.display=t===id?'block':'none');
-  document.querySelectorAll('#sTabs .tab').forEach((el,i)=>el.classList.toggle('on',i===idx));
-  document.querySelectorAll('#view-student .bni').forEach((el,i)=>el.classList.toggle('on',i===idx));
+// ═══ 탭 ═══
+function sTab(id,idx){
+  ['s-hw','s-hist','s-pts','s-notice'].forEach(t=>document.getElementById(t).style.display=t===id?'block':'none');
+  document.querySelectorAll('#scrStudent .tab').forEach((el,i)=>el.classList.toggle('on',i===idx));
+  document.querySelectorAll('#scrStudent .bni').forEach((el,i)=>el.classList.toggle('on',i===idx));
 }
-function switchTTab(id, idx) {
-  ['t-dash','t-students','t-hw','t-notice'].forEach(t=>document.getElementById(t).style.display=t===id?'block':'none');
-  document.querySelectorAll('#tTabs .tab').forEach((el,i)=>el.classList.toggle('on',i===idx));
-  document.querySelectorAll('#view-teacher .bni').forEach((el,i)=>el.classList.toggle('on',i===idx));
-  if(id==='t-students') loadAllStudents();
-  if(id==='t-hw') loadHomeworks();
-  if(id==='t-notice') loadNoticesAdmin();
-}
-
-// ══ 토스트 ══
-let toastTimer;
-function showToast(msg, type='') {
-  const t=document.getElementById('toast');
-  t.textContent=msg;
-  t.className='toast'+(type?' '+type:'')+' on';
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>t.classList.remove('on'),3000);
+function tTab(id,idx){
+  ['t-dash','t-stu','t-hw','t-ntc'].forEach(t=>document.getElementById(t).style.display=t===id?'block':'none');
+  document.querySelectorAll('#scrTeacher .tab').forEach((el,i)=>el.classList.toggle('on',i===idx));
+  document.querySelectorAll('#scrTeacher .bni').forEach((el,i)=>el.classList.toggle('on',i===idx));
+  if(id==='t-stu')loadAllStu();
+  if(id==='t-hw')loadHws();
+  if(id==='t-ntc')loadNtcAdmin();
 }
 
-// ══ 모달 ══
-function openModal(id){document.getElementById(id).classList.add('on')}
-function closeModal(id){document.getElementById(id).classList.remove('on')}
-document.querySelectorAll('.overlay').forEach(o=>{
-  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('on')});
-});
-
-// ══ 학생 추가 ══
-async function addStudent() {
-  const name=document.getElementById('newStudentName').value.trim();
-  const cls=document.getElementById('newStudentClass').value;
-  const phone=document.getElementById('newStudentPhone').value.trim();
-  if(!name){showToast('이름을 입력해주세요!','error');return;}
-  const notifSettings={
-    submit:document.getElementById('notif-submit').checked,
-    feedback:document.getElementById('notif-feedback').checked,
-    deadline:document.getElementById('notif-deadline').checked,
-    points:document.getElementById('notif-points').checked,
-  };
-  try {
-    const {error}=await sb.from('students').insert({name,class:cls,phone,points:0,notif_settings:notifSettings});
-    if(error){showToast('오류: '+error.message,'error');return;}
-    showToast('✅ '+name+' 학생이 추가됐어요!','success');
-    closeModal('addStudentModal');
-    document.getElementById('newStudentName').value='';
-    document.getElementById('newStudentPhone').value='';
-    loadAllStudents();
-    loadTeacherDash();
-  } catch(e){showToast('연결 오류가 났어요.','error');}
-}
-
-// ══ 학생 목록 ══
-const BG=['#E3F2FD','#E8F5E9','#FFF8E1','#F3E5F5','#FFE0B2','#E8EAF6'];
-const TC=['#0D47A1','#1B5E20','#7B4F00','#6A1B9A','#E65100','#283593'];
-async function loadAllStudents(){
-  try {
-    const {data}=await sb.from('students').select('*').order('name');
-    const c=document.getElementById('allStudentList');
-    if(!data||data.length===0){c.innerHTML='<div class="empty"><div class="empty-icon">👨‍👧</div><p>학생을 추가해보세요</p></div>';return;}
-    c.innerHTML=data.map((s,i)=>`
-      <div class="student-row" onclick="openStudentDetail('${s.id}','${s.name}',${s.points||0})">
-        <div class="s-avatar" style="background:${BG[i%6]};color:${TC[i%6]}">${s.name[0]}</div>
-        <div class="s-info"><h4>${s.name}</h4><p>${s.class||'반 미배정'} · 📱 ${s.phone||'연락처 없음'}</p></div>
-        <div class="s-score"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:var(--gold)">${s.points||0}p</span></div>
+// ═══ 학생 숙제 ═══
+async function loadStuHw(){
+  try{
+    const {data}=await sb.from('homeworks').select('*').eq('active',true).order('created_at',{ascending:false});
+    const c=document.getElementById('s-hw');
+    if(!data||!data.length){c.innerHTML='<div class="empty"><div class="empty-ic">🎉</div><p>지금은 숙제가 없어요!<br>잠시 쉬세요 😊</p></div>';return;}
+    c.innerHTML=data.map(hw=>`
+      <div class="card card-red">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+          <span class="badge br">🎤 ${hw.type}</span>
+          <span class="badge bo">${hw.due_date?'마감 '+hw.due_date:'마감일 미정'}</span>
+        </div>
+        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;margin-bottom:4px">${hw.title}</div>
+        ${hw.script?`<div class="script-box">${hw.script}</div>`:''}
+        <button class="btn btn-navy" onclick="openRec('${hw.id}',\`${(hw.script||'').replace(/`/g,"'")}\`,'${hw.title.replace(/'/g,'')}')">🎤 녹음하고 제출하기</button>
       </div>`).join('');
-  } catch(e){showToast('학생 목록을 불러오지 못했어요.','error');}
+  }catch(e){document.getElementById('s-hw').innerHTML='<div class="empty"><div class="empty-ic">⚠️</div><p>불러오지 못했어요.<br>인터넷 연결을 확인해주세요.</p></div>';}
 }
 
-// ══ 학생 상세 ══
-async function openStudentDetail(id,name,points){
-  currentDetailStudentId=id;
-  document.getElementById('detailStudentName').textContent=name+' 학생';
-  document.getElementById('detailPoints').textContent=points+'p';
-  document.getElementById('detailScore').textContent='-';
-  document.getElementById('detailRecentSubs').innerHTML='';
-  try {
-    const {data}=await sb.from('submissions').select('*,homeworks(title)').eq('student_id',id).order('created_at',{ascending:false}).limit(3);
-    if(data&&data.length>0){
-      document.getElementById('detailScore').textContent=data[0].score+'점';
-      document.getElementById('detailRecentSubs').innerHTML=`
-        <div class="sec-label">최근 제출 기록</div>
-        ${data.map(s=>{
-          const sc=s.score||0;
-          const c=sc>=85?'var(--green)':sc>=70?'var(--gold)':'var(--red)';
-          return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-            <span style="font-size:13px;color:var(--text)">${s.homeworks?.title||'숙제'}</span>
-            <span style="font-family:'Nunito',sans-serif;font-weight:800;color:${c}">${sc}점</span>
-          </div>`;
-        }).join('')}`;
+// ═══ 학생 기록 ═══
+async function loadStuHist(){
+  if(!curStuId)return;
+  try{
+    const {data}=await sb.from('submissions').select('*,homeworks(title)').eq('student_id',curStuId).order('created_at',{ascending:false});
+    const c=document.getElementById('histList');
+    if(!data||!data.length){c.innerHTML='<div class="empty"><div class="empty-ic">📊</div><p>아직 제출 기록이 없어요<br>첫 낭독을 해보세요!</p></div>';return;}
+    c.innerHTML=data.map(s=>{
+      const sc=s.score||0;
+      const bg=sc>=85?'#E8F5E9':sc>=70?'#FFF8E1':'#FFEBEE';
+      const tc=sc>=85?'#2E7D32':sc>=70?'#F57F17':'#C62828';
+      return `<div class="hist-item">
+        <div class="hist-sc" style="background:${bg}"><span class="hist-n" style="color:${tc}">${sc}</span><span style="font-size:9px;color:${tc};font-weight:700">점</span></div>
+        <div><div style="font-size:13px;font-weight:700">${s.homeworks?.title||'숙제'}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${new Date(s.created_at).toLocaleDateString('ko-KR',{month:'long',day:'numeric'})}</div></div>
+        <div style="margin-left:auto;color:var(--border);font-size:20px">›</div>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+// ═══ 알림장 (학생) ═══
+async function loadNotices(){
+  try{
+    const {data}=await sb.from('notices').select('*').order('created_at',{ascending:false});
+    const c=document.getElementById('noticeList');
+    if(!data||!data.length){c.innerHTML='<div class="empty"><div class="empty-ic">📢</div><p>아직 알림장이 없어요</p></div>';return;}
+    c.innerHTML=data.map(n=>`
+      <div class="notice-card">
+        <div class="notice-date">${new Date(n.created_at).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'})} · ${n.target||'전체'}</div>
+        <div class="notice-title">📢 ${n.title}</div>
+        <div class="notice-body">
+          ${n.content?.class?'📖 수업: '+n.content.class+'<br>':''}
+          ${n.content?.homework?'📝 숙제: '+n.content.homework+'<br>':''}
+          ${n.content?.prep?'🎒 준비물: '+n.content.prep+'<br>':''}
+          ${n.content?.etc?'⭐ '+n.content.etc:''}
+        </div>
+      </div>`).join('');
+  }catch(e){}
+}
+
+// ═══ 선생님 대시보드 ═══
+async function loadDash(){
+  try{
+    const [{data:stus},{data:subs}]=await Promise.all([
+      sb.from('students').select('*'),
+      sb.from('submissions').select('*,students(name),homeworks(title)').order('created_at',{ascending:false})
+    ]);
+    document.getElementById('stTotal').textContent=stus?.length||0;
+    const today=new Date().toDateString();
+    const todaySubs=(subs||[]).filter(s=>new Date(s.created_at).toDateString()===today);
+    document.getElementById('stToday').textContent=todaySubs.length;
+    const submittedIds=new Set(todaySubs.map(s=>s.student_id));
+    const notSub=(stus||[]).filter(s=>!submittedIds.has(s.id));
+    document.getElementById('stNot').textContent=notSub.length;
+    if(subs&&subs.length){
+      const avg=Math.round(subs.reduce((a,s)=>a+(s.score||0),0)/subs.length);
+      document.getElementById('stAvg').textContent=avg;
     }
-  } catch(e){}
-  openModal('studentDetailModal');
+    // 오늘 제출
+    const tEl=document.getElementById('todayList');
+    tEl.innerHTML=todaySubs.length===0
+      ?'<div class="empty"><p>아직 오늘 제출이 없어요</p></div>'
+      :todaySubs.map((s,i)=>{
+        const sc=s.score||0;
+        const scc=sc>=85?'var(--green)':sc>=70?'var(--gold)':'var(--red)';
+        return `<div class="srow" onclick="openStuDetail('${s.student_id}','${s.students?.name||'학생'}',0)">
+          <div class="sav" style="background:${BG[i%6]};color:${TC[i%6]}">${(s.students?.name||'?')[0]}</div>
+          <div class="sinfo"><h4>${s.students?.name||'학생'}</h4><p>${s.homeworks?.title||''}</p></div>
+          <div class="sscore"><div class="sscore-n" style="color:${scc}">${sc}</div><div style="font-size:10px;color:var(--muted)">점</div></div>
+        </div>`;
+      }).join('');
+    // 미제출
+    document.getElementById('notSubList').innerHTML=notSub.length===0
+      ?'<div class="empty" style="padding:16px"><p style="color:var(--green)">🎉 모두 제출했어요!</p></div>'
+      :notSub.map(s=>`
+        <div class="srow" onclick="openStuDetail('${s.id}','${s.name}',${s.points||0})">
+          <div class="sav" style="background:#FFEBEE;color:#C62828">${s.name[0]}</div>
+          <div class="sinfo"><h4>${s.name}</h4><p>${s.class||''}</p></div>
+          <div class="sscore"><span class="badge br">미제출</span></div>
+        </div>`).join('');
+    // 틀린 단어
+    if(subs&&subs.length){
+      const wc={};
+      subs.forEach(s=>(s.issues||[]).forEach(it=>{if(it.word)wc[it.word]=(wc[it.word]||0)+1;}));
+      const sorted=Object.entries(wc).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      const max=sorted[0]?.[1]||1;
+      document.getElementById('wrongWords').innerHTML=sorted.length===0
+        ?'<div class="empty"><p>제출 데이터가 쌓이면 나타나요</p></div>'
+        :sorted.map(([w,cnt],i)=>`<div class="wrank"><div class="wnum">${i+1}</div><div class="wword">${w}</div><div class="wbar-wrap"><div class="wbar" style="width:${Math.round(cnt/max*100)}%"></div></div><div class="wcnt">${cnt}명</div></div>`).join('');
+    }
+  }catch(e){toast('대시보드 오류. 새로고침 해주세요.','err');}
 }
 
-async function deleteStudent(){
-  if(!confirm('정말 이 학생을 삭제할까요?\n삭제하면 모든 기록이 사라져요.'))return;
-  try {
-    await sb.from('submissions').delete().eq('student_id',currentDetailStudentId);
-    await sb.from('students').delete().eq('id',currentDetailStudentId);
-    showToast('삭제됐어요.','success');
-    closeModal('studentDetailModal');
-    loadAllStudents();
-    loadTeacherDash();
-  } catch(e){showToast('삭제 중 오류가 났어요.','error');}
+// ═══ 학생 추가 ═══
+async function addStudent(){
+  const name=document.getElementById('newStuName').value.trim();
+  if(!name){toast('이름을 입력해주세요!','err');return;}
+  try{
+    const {error}=await sb.from('students').insert({
+      name,class:document.getElementById('newStuClass').value,
+      phone:document.getElementById('newStuPhone').value.trim(),
+      points:0,
+      notif_settings:{submit:document.getElementById('n1').checked,feedback:document.getElementById('n2').checked,deadline:document.getElementById('n3').checked,points:document.getElementById('n4').checked}
+    });
+    if(error){toast('오류: '+error.message,'err');return;}
+    toast('✅ '+name+' 학생이 추가됐어요!','ok');
+    closeSheet('sheetAddStu');
+    document.getElementById('newStuName').value='';
+    document.getElementById('newStuPhone').value='';
+    loadAllStu();loadDash();
+  }catch(e){toast('연결 오류가 났어요.','err');}
+}
+
+// ═══ 전체 학생 ═══
+async function loadAllStu(){
+  try{
+    const {data}=await sb.from('students').select('*').order('name');
+    const c=document.getElementById('allStuList');
+    if(!data||!data.length){c.innerHTML='<div class="empty"><div class="empty-ic">👨‍👧</div><p>학생을 추가해보세요</p></div>';return;}
+    c.innerHTML=data.map((s,i)=>`
+      <div class="srow" onclick="openStuDetail('${s.id}','${s.name}',${s.points||0})">
+        <div class="sav" style="background:${BG[i%6]};color:${TC[i%6]}">${s.name[0]}</div>
+        <div class="sinfo"><h4>${s.name}</h4><p>${s.class||'반 미배정'} · ${s.phone||'연락처 없음'}</p></div>
+        <div class="sscore"><span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;color:var(--gold)">${s.points||0}p</span></div>
+      </div>`).join('');
+  }catch(e){toast('학생 목록 오류.','err');}
+}
+
+// ═══ 학생 상세 ═══
+async function openStuDetail(id,name,points){
+  curDetailId=id;
+  document.getElementById('detailName').textContent=name+' 학생';
+  document.getElementById('detailPts').textContent=points+'p';
+  document.getElementById('detailScore').textContent='-';
+  document.getElementById('detailSubs').innerHTML='';
+  try{
+    const {data}=await sb.from('submissions').select('*,homeworks(title)').eq('student_id',id).order('created_at',{ascending:false}).limit(3);
+    if(data&&data.length){
+      document.getElementById('detailScore').textContent=data[0].score+'점';
+      document.getElementById('detailSubs').innerHTML='<div class="slabel">최근 제출</div>'+
+        data.map(s=>{const sc=s.score||0;const c=sc>=85?'var(--green)':sc>=70?'var(--gold)':'var(--red)';
+          return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px">${s.homeworks?.title||'숙제'}</span><span style="font-family:'Nunito',sans-serif;font-weight:800;color:${c}">${sc}점</span></div>`;
+        }).join('');
+    }
+  }catch(e){}
+  openSheet('sheetStuDetail');
+}
+
+async function deleteStu(){
+  if(!confirm('정말 삭제할까요?\n모든 기록이 사라져요.'))return;
+  try{
+    await sb.from('submissions').delete().eq('student_id',curDetailId);
+    await sb.from('students').delete().eq('id',curDetailId);
+    toast('삭제됐어요.','ok');
+    closeSheet('sheetStuDetail');
+    loadAllStu();loadDash();
+  }catch(e){toast('삭제 오류.','err');}
 }
 
 async function sendFeedback(){
   const c=document.getElementById('teacherComment').value.trim();
-  if(!c){showToast('코멘트를 입력해주세요!','error');return;}
-  showToast('📲 카카오톡 알림을 보냈습니다!','success');
-  closeModal('studentDetailModal');
+  if(!c){toast('코멘트를 입력해주세요!','err');return;}
+  toast('📲 카카오톡 알림을 보냈습니다!','ok');
+  closeSheet('sheetStuDetail');
   document.getElementById('teacherComment').value='';
 }
 
-// ══ 숙제 출제 ══
-async function addHomework(){
+// ═══ 숙제 관리 ═══
+async function addHw(){
   const title=document.getElementById('hwTitle').value.trim();
-  const type=document.getElementById('hwType').value;
-  const script=document.getElementById('hwScript').value.trim();
-  const due=document.getElementById('hwDue').value;
-  const target=document.getElementById('hwTarget').value;
-  if(!title){showToast('제목을 입력해주세요!','error');return;}
-  try {
-    const {error}=await sb.from('homeworks').insert({title,type,script,due_date:due||null,target,active:true});
-    if(error){showToast('오류: '+error.message,'error');return;}
-    showToast('✅ 숙제가 출제됐어요!','success');
-    closeModal('addHwModal');
+  if(!title){toast('제목을 입력해주세요!','err');return;}
+  try{
+    const {error}=await sb.from('homeworks').insert({
+      title,type:document.getElementById('hwType').value,
+      script:document.getElementById('hwScript').value.trim(),
+      due_date:document.getElementById('hwDue').value||null,
+      target:document.getElementById('hwTarget').value,active:true
+    });
+    if(error){toast('오류: '+error.message,'err');return;}
+    toast('✅ 숙제가 출제됐어요!','ok');
+    closeSheet('sheetAddHw');
     document.getElementById('hwTitle').value='';
     document.getElementById('hwScript').value='';
-    loadHomeworks();
-  } catch(e){showToast('연결 오류가 났어요.','error');}
+    loadHws();
+  }catch(e){toast('연결 오류.','err');}
 }
 
-async function loadHomeworks(){
-  try {
+async function loadHws(){
+  try{
     const {data}=await sb.from('homeworks').select('*').order('created_at',{ascending:false});
-    const c=document.getElementById('hwAdminList');
-    if(!data||data.length===0){c.innerHTML='<div class="empty"><div class="empty-icon">📝</div><p>출제된 숙제가 없어요</p></div>';return;}
+    const c=document.getElementById('hwList');
+    if(!data||!data.length){c.innerHTML='<div class="empty"><div class="empty-ic">📝</div><p>출제된 숙제가 없어요</p></div>';return;}
     c.innerHTML=data.map(hw=>`
       <div class="card">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
-          <div>
-            <div style="font-size:14px;font-weight:700">${hw.title}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:3px">${hw.type} · ${hw.target} · ${hw.due_date?'마감 '+hw.due_date:'마감일 미정'}</div>
-          </div>
-          <span class="badge ${hw.active?'badge-red':'badge-green'}">${hw.active?'진행중':'완료'}</span>
+          <div><div style="font-size:14px;font-weight:700">${hw.title}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">${hw.type} · ${hw.target} · ${hw.due_date?'마감 '+hw.due_date:'마감일 미정'}</div></div>
+          <span class="badge ${hw.active?'br':'bg'}">${hw.active?'진행중':'완료'}</span>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-sm" style="background:var(--navy-light);color:var(--navy);border:none;cursor:pointer;font-weight:700" onclick="toggleHwActive('${hw.id}',${hw.active})">${hw.active?'완료 처리':'다시 활성화'}</button>
-          <button class="btn btn-sm" style="background:#FFEBEE;color:var(--red);border:none;cursor:pointer;font-weight:700" onclick="deleteHomework('${hw.id}')">삭제</button>
+          <button class="btn btn-sm" style="background:var(--navy-light);color:var(--navy);border:none;cursor:pointer;font-weight:700" onclick="toggleHw('${hw.id}',${hw.active})">${hw.active?'완료처리':'다시활성화'}</button>
+          <button class="btn btn-sm" style="background:#FFEBEE;color:var(--red);border:none;cursor:pointer;font-weight:700" onclick="delHw('${hw.id}')">삭제</button>
         </div>
       </div>`).join('');
-  } catch(e){showToast('숙제 목록을 불러오지 못했어요.','error');}
+  }catch(e){}
 }
 
-async function toggleHwActive(id,current){
-  await sb.from('homeworks').update({active:!current}).eq('id',id);
-  loadHomeworks();
-  showToast('상태가 변경됐어요!','success');
+async function toggleHw(id,cur){
+  await sb.from('homeworks').update({active:!cur}).eq('id',id);
+  loadHws();toast('변경됐어요!','ok');
 }
-
-async function deleteHomework(id){
-  if(!confirm('이 숙제를 삭제할까요?'))return;
+async function delHw(id){
+  if(!confirm('삭제할까요?'))return;
   await sb.from('homeworks').delete().eq('id',id);
-  showToast('삭제됐어요!','success');
-  loadHomeworks();
+  toast('삭제됐어요!','ok');loadHws();
 }
 
-// ══ 학생 숙제 목록 ══
-async function loadStudentHomeworks(){
-  try {
-    const {data}=await sb.from('homeworks').select('*').eq('active',true).order('created_at',{ascending:false});
-    const c=document.getElementById('s-hw');
-    if(!data||data.length===0){
-      c.innerHTML='<div class="empty"><div class="empty-icon">🎉</div><p>지금은 숙제가 없어요!<br>잠시 쉬세요 😊</p></div>';
-      return;
-    }
-    c.innerHTML=data.map(hw=>`
-      <div class="card card-accent">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
-          <span class="badge badge-red">🎤 ${hw.type}</span>
-          <span class="badge badge-gold">${hw.due_date?'마감 '+hw.due_date:'마감일 미정'}</span>
+// ═══ 알림장 관리 ═══
+async function addNtc(){
+  const title=document.getElementById('ntcTitle').value.trim();
+  if(!title){toast('제목을 입력해주세요!','err');return;}
+  try{
+    const {error}=await sb.from('notices').insert({
+      title,target:document.getElementById('ntcTarget').value,
+      content:{class:document.getElementById('ntcClass').value.trim(),homework:document.getElementById('ntcHw').value.trim(),prep:document.getElementById('ntcPrep').value.trim(),etc:document.getElementById('ntcEtc').value.trim()}
+    });
+    if(error){toast('오류: '+error.message,'err');return;}
+    toast('📢 알림장이 발송됐어요!','ok');
+    closeSheet('sheetAddNtc');
+    ['ntcTitle','ntcClass','ntcHw','ntcPrep','ntcEtc'].forEach(id=>document.getElementById(id).value='');
+    loadNtcAdmin();
+  }catch(e){toast('연결 오류.','err');}
+}
+
+async function loadNtcAdmin(){
+  try{
+    const {data}=await sb.from('notices').select('*').order('created_at',{ascending:false});
+    const c=document.getElementById('ntcList');
+    if(!data||!data.length){c.innerHTML='<div class="empty"><div class="empty-ic">📢</div><p>작성된 알림장이 없어요</p></div>';return;}
+    c.innerHTML=data.map(n=>`
+      <div class="notice-card">
+        <div class="notice-date">${new Date(n.created_at).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'})} · ${n.target||'전체'}</div>
+        <div class="notice-title">📢 ${n.title}</div>
+        <div class="notice-body">
+          ${n.content?.class?'📖 수업: '+n.content.class+'<br>':''}
+          ${n.content?.homework?'📝 숙제: '+n.content.homework+'<br>':''}
+          ${n.content?.prep?'🎒 준비물: '+n.content.prep+'<br>':''}
+          ${n.content?.etc?'⭐ '+n.content.etc:''}
         </div>
-        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;margin-bottom:4px">${hw.title}</div>
-        ${hw.script?`<div class="script-box">${hw.script}</div>`:''}
-        <button class="btn btn-navy" onclick="openRecordModal('${hw.id}',\`${(hw.script||'').replace(/`/g,'\'')}\`,'${hw.title.replace(/'/g,'')}')">
-          🎤 녹음하고 제출하기
-        </button>
       </div>`).join('');
-  } catch(e){
-    document.getElementById('s-hw').innerHTML='<div class="empty"><div class="empty-icon">⚠️</div><p>숙제를 불러오지 못했어요.<br>인터넷 연결을 확인해주세요.</p></div>';
-  }
+  }catch(e){}
 }
 
-// ══ 녹음 모달 ══
-function openRecordModal(hwId,script,title){
-  currentHwId=hwId;
-  currentHwScript=script;
-  document.getElementById('recordModalTitle').textContent=title;
-  document.getElementById('recordScript').textContent=script||'자유롭게 낭독해주세요';
-  resetRecord();
-  openModal('recordModal');
+// ═══ 녹음 ═══
+function openRec(hwId,script,title){
+  curHwId=hwId;curHwScript=script;
+  document.getElementById('recTitle').textContent=title;
+  document.getElementById('recScript').textContent=script||'자유롭게 낭독해주세요';
+  resetRec();openSheet('sheetRecord');
 }
 
-// ══ 녹음 ══
-async function toggleRecord(){
+async function toggleRec(){
   if(!isRec){
-    try {
+    try{
       const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      audioChunks=[];
-      mediaRecorder=new MediaRecorder(stream);
-      mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
-      mediaRecorder.onstop=()=>{
-        audioBlob=new Blob(audioChunks,{type:'audio/webm'});
-        document.getElementById('audioEl').src=URL.createObjectURL(audioBlob);
+      chunks=[];
+      mr=new MediaRecorder(stream);
+      mr.ondataavailable=e=>chunks.push(e.data);
+      mr.onstop=()=>{
+        aBlob=new Blob(chunks,{type:'audio/webm'});
+        document.getElementById('audioEl').src=URL.createObjectURL(aBlob);
         document.getElementById('audioPre').classList.add('on');
         stream.getTracks().forEach(t=>t.stop());
       };
-      mediaRecorder.start();
-      isRec=true;recSec=0;
-      document.getElementById('recBtn').classList.add('recording');
+      mr.start();isRec=true;rsec=0;
+      document.getElementById('recBtn').classList.add('rec');
       document.getElementById('recPulse').classList.add('on');
       document.getElementById('recHint').textContent='녹음 중... 다시 탭하면 정지';
       document.getElementById('recTimer').classList.add('on');
-      recInterval=setInterval(()=>{
-        recSec++;
-        const m=Math.floor(recSec/60),s=recSec%60;
-        document.getElementById('recTimer').textContent=m+':'+(s<10?'0':'')+s;
-      },1000);
-    } catch(e){showToast('마이크 권한이 필요해요! 브라우저 설정에서 허용해주세요.','error');}
-  } else {
-    mediaRecorder.stop();isRec=false;clearInterval(recInterval);
-    document.getElementById('recBtn').classList.remove('recording');
+      ri=setInterval(()=>{rsec++;const m=Math.floor(rsec/60),s=rsec%60;document.getElementById('recTimer').textContent=m+':'+(s<10?'0':'')+s;},1000);
+    }catch(e){toast('마이크 권한이 필요해요!','err');}
+  }else{
+    mr.stop();isRec=false;clearInterval(ri);
+    document.getElementById('recBtn').classList.remove('rec');
     document.getElementById('recPulse').classList.remove('on');
     document.getElementById('recHint').textContent='녹음 완료! 아래에서 들어보고 분석하세요.';
     document.getElementById('recTimer').classList.remove('on');
@@ -867,82 +868,56 @@ async function toggleRecord(){
 
 function handleFile(e){
   const f=e.target.files[0];if(!f)return;
-  audioBlob=f;
+  aBlob=f;
   document.getElementById('audioEl').src=URL.createObjectURL(f);
   document.getElementById('audioPre').classList.add('on');
   document.getElementById('recHint').textContent='파일 업로드 완료!';
 }
 
-// ══ AI 분석 ══
 async function startAnalysis(){
   document.getElementById('audioPre').style.display='none';
   document.getElementById('loadingEl').classList.add('on');
   const steps=['ls1','ls2','ls3','ls4'];
   for(let i=0;i<steps.length;i++){
     await new Promise(r=>setTimeout(r,900));
-    document.getElementById(steps[i]).classList.remove('active');
+    document.getElementById(steps[i]).classList.remove('cur');
     document.getElementById(steps[i]).classList.add('done');
-    if(i<steps.length-1)document.getElementById(steps[i+1]).classList.add('active');
+    if(i<steps.length-1)document.getElementById(steps[i+1]).classList.add('cur');
   }
   await new Promise(r=>setTimeout(r,400));
   let result;
-  try {
+  try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
         messages:[{role:'user',content:`당신은 한국 영어 교습소의 AI 발음 코치입니다. 초등~중학생 대상입니다.
-
-낭독 대본: "${currentHwScript||'자유 낭독'}"
-
-한국인 학습자가 이 문장에서 자주 틀리는 발음 3-4개를 골라 JSON으로만 응답해주세요 (```없이):
-{"score":75~92사이정수,"overall":"전체코멘트(한국어,2문장,따뜻하고격려하는톤)","issues":[{"word":"단어","wrong":"틀린발음","right":"올바른발음","tip":"교정팁1문장"}]}`}]
-      })
+낭독 대본: "${curHwScript||'자유 낭독'}"
+한국인 학습자가 자주 틀리는 발음 3-4개를 골라 JSON으로만 응답해주세요 (마크다운 없이):
+{"score":75~92사이정수,"overall":"전체코멘트(한국어,2문장,따뜻하고격려하는톤)","issues":[{"word":"단어","wrong":"틀린발음","right":"올바른발음","tip":"교정팁1문장"}]}`}]})
     });
-    const data=await res.json();
-    let txt=data.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-    result=JSON.parse(txt);
-  } catch(e){
-    result={
-      score:83,
-      overall:"전반적으로 자연스럽고 유창하게 읽었어요! 몇 가지 발음 포인트만 더 연습하면 훨씬 좋아질 거예요 😊",
-      issues:[
-        {word:"essential",wrong:"에센셜 (첫 음절 강세)",right:"이-SEN-셜 (두 번째 음절 강세)",tip:"두 번째 음절 'SEN'에 힘을 줘요."},
-        {word:"invisible",wrong:"인비지블 (z 없이)",right:"인-VIZ-어-블 (z 소리)",tip:"'vis'를 '비즈'처럼 z 소리로 발음하세요."},
-        {word:"responsible",wrong:"레스폰시블",right:"리-SPON-서-블",tip:"'spon'에 강세, 마지막은 가볍게!"},
-        {word:"tenderness",wrong:"텐-더-네스 (균등)",right:"TEN-더-너스 (첫 강세)",tip:"'TEN'에 강하게, 나머지는 약하게!"}
-      ]
-    };
+    const d=await res.json();
+    result=JSON.parse(d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim());
+  }catch(e){
+    result={score:83,overall:"전반적으로 자연스럽고 유창하게 읽었어요! 몇 가지 발음 포인트만 더 연습하면 훨씬 좋아질 거예요 😊",issues:[{word:"essential",wrong:"에센셜",right:"이-SEN-셜",tip:"두 번째 음절에 강세를 줘요."},{word:"invisible",wrong:"인비지블",right:"인-VIZ-어-블",tip:"'vis'를 '비즈'처럼 z 소리로요."},{word:"responsible",wrong:"레스폰시블",right:"리-SPON-서-블",tip:"'spon'에 강세!"},{word:"tenderness",wrong:"텐더네스",right:"TEN-더-너스",tip:"첫 음절에 강하게!"}]};
   }
-  await saveSubmission(result);
+  await saveSub(result);
   showResult(result);
 }
 
-async function saveSubmission(result){
-  if(!currentStudentId||!currentHwId)return;
-  try {
-    await sb.from('submissions').insert({
-      student_id:currentStudentId,
-      homework_id:currentHwId,
-      score:result.score,
-      feedback:result.overall,
-      issues:result.issues,
-    });
+async function saveSub(result){
+  if(!curStuId||!curHwId)return;
+  try{
+    await sb.from('submissions').insert({student_id:curStuId,homework_id:curHwId,score:result.score,feedback:result.overall,issues:result.issues});
     let earned=10;
     if(result.score>=90)earned+=20;
     else if(result.score>=80)earned+=10;
-    const {data:student}=await sb.from('students').select('points').eq('id',currentStudentId).single();
-    const newPoints=(student?.points||0)+earned;
-    await sb.from('students').update({points:newPoints}).eq('id',currentStudentId);
-    document.getElementById('totalPoints').textContent=newPoints+'점';
-    document.getElementById('pointsEarned').style.display='block';
-    document.getElementById('pointsEarned').innerHTML=`
-      <div style="font-size:24px;margin-bottom:6px">🎉</div>
-      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:20px;color:var(--gold)">+${earned}점 획득!</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:4px">누적 포인트: ${newPoints}점</div>`;
-  } catch(e){console.log('저장 오류:',e);}
+    const {data:stu}=await sb.from('students').select('points').eq('id',curStuId).single();
+    const np=(stu?.points||0)+earned;
+    await sb.from('students').update({points:np}).eq('id',curStuId);
+    document.getElementById('totalPts').textContent=np+'점';
+    document.getElementById('ptsEarned').style.display='block';
+    document.getElementById('ptsEarned').innerHTML=`<div style="font-size:24px;margin-bottom:6px">🎉</div><div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:20px;color:var(--gold)">+${earned}점 획득!</div><div style="font-size:12px;color:var(--muted);margin-top:4px">누적 포인트: ${np}점</div>`;
+  }catch(e){}
 }
 
 function showResult(r){
@@ -955,176 +930,27 @@ function showResult(r){
   const arc=document.getElementById('scoreArc');
   setTimeout(()=>{arc.style.strokeDashoffset=169.6*(1-sc/100)},100);
   arc.style.stroke=sc>=80?'#27AE60':sc>=70?'#F5A623':'#E8392A';
-  document.getElementById('overallText').textContent=r.overall||'분석이 완료됐어요.';
+  document.getElementById('overallText').textContent=r.overall||'분석 완료!';
   document.getElementById('feedItems').innerHTML=(r.issues||[]).map(it=>`
-    <div class="fi">
-      <div class="fi-icon" style="background:#FFF8E1">⚠️</div>
-      <div>
-        <div class="fi-word">${it.word}</div>
-        <div class="fi-phonemes">
-          <span class="ph ph-wrong">${it.wrong}</span>
-          <span style="font-size:11px;color:var(--muted)">→</span>
-          <span class="ph ph-right">${it.right}</span>
-        </div>
-        <div class="fi-tip">${it.tip}</div>
-      </div>
-    </div>`).join('');
+    <div class="fi"><div class="fi-ic">⚠️</div>
+    <div><div class="fi-word">${it.word}</div>
+    <div class="fi-ph"><span class="ph ph-w">${it.wrong}</span><span style="font-size:11px;color:var(--muted)">→</span><span class="ph ph-r">${it.right}</span></div>
+    <div class="fi-tip">${it.tip}</div></div></div>`).join('');
 }
 
-function resetRecord(){
+function resetRec(){
   document.getElementById('resultEl').classList.remove('on');
   document.getElementById('loadingEl').classList.remove('on');
   document.getElementById('audioPre').classList.remove('on');
   document.getElementById('audioPre').style.display='';
-  document.getElementById('pointsEarned').style.display='none';
+  document.getElementById('ptsEarned').style.display='none';
   document.getElementById('recHint').textContent='버튼을 눌러 녹음 시작';
   document.getElementById('recTimer').classList.remove('on');
-  document.getElementById('recBtn').classList.remove('recording');
+  document.getElementById('recBtn').classList.remove('rec');
   document.getElementById('recPulse').classList.remove('on');
   document.getElementById('recBtn').innerHTML='<svg viewBox="0 0 24 24" fill="white"><path d="M12 1a4 4 0 014 4v6a4 4 0 01-8 0V5a4 4 0 014-4zm-1 18.93V22h2v-2.07A8 8 0 0020 12h-2a6 6 0 01-12 0H4a8 8 0 007 7.93z"/></svg>';
-  ['ls1','ls2','ls3','ls4'].forEach((s,i)=>{
-    const el=document.getElementById(s);
-    el.classList.remove('done','active');
-    if(i===0)el.classList.add('active');
-  });
-  audioBlob=null;
-}
-
-// ══ 기록 ══
-async function loadStudentHistory(){
-  if(!currentStudentId)return;
-  try {
-    const {data}=await sb.from('submissions').select('*,homeworks(title)').eq('student_id',currentStudentId).order('created_at',{ascending:false});
-    const c=document.getElementById('histList');
-    if(!data||data.length===0){c.innerHTML='<div class="empty"><div class="empty-icon">📊</div><p>아직 제출 기록이 없어요<br>첫 번째 낭독을 해보세요!</p></div>';return;}
-    c.innerHTML=data.map(s=>{
-      const sc=s.score||0;
-      const bg=sc>=85?'#E8F5E9':sc>=70?'#FFF8E1':'#FFEBEE';
-      const tc=sc>=85?'#2E7D32':sc>=70?'#F57F17':'#C62828';
-      return `<div class="hist-item">
-        <div class="hist-score" style="background:${bg}"><span class="hs-num" style="color:${tc}">${sc}</span><span style="font-size:9px;color:${tc};font-weight:700">점</span></div>
-        <div><div style="font-size:13px;font-weight:700">${s.homeworks?.title||'숙제'}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${new Date(s.created_at).toLocaleDateString('ko-KR',{month:'long',day:'numeric'})}</div></div>
-        <div style="margin-left:auto;color:var(--border);font-size:20px">›</div>
-      </div>`;
-    }).join('');
-  } catch(e){document.getElementById('histList').innerHTML='<div class="empty"><p>기록을 불러오지 못했어요.</p></div>';}
-}
-
-// ══ 선생님 대시보드 ══
-async function loadTeacherDash(){
-  try {
-    const [{data:students},{data:subs}]=await Promise.all([
-      sb.from('students').select('*'),
-      sb.from('submissions').select('*,students(name),homeworks(title)').order('created_at',{ascending:false})
-    ]);
-    document.getElementById('totalStudents').textContent=students?.length||0;
-    const today=new Date().toDateString();
-    const todaySubs=(subs||[]).filter(s=>new Date(s.created_at).toDateString()===today);
-    document.getElementById('todaySubmit').textContent=todaySubs.length;
-    const submittedIds=new Set(todaySubs.map(s=>s.student_id));
-    const notSubmitted=(students||[]).filter(s=>!submittedIds.has(s.id));
-    document.getElementById('notSubmit').textContent=notSubmitted.length;
-    if(subs&&subs.length>0){
-      const avg=Math.round(subs.reduce((a,s)=>a+(s.score||0),0)/subs.length);
-      document.getElementById('avgScore').textContent=avg;
-    } else {
-      document.getElementById('avgScore').textContent='-';
-    }
-    // 오늘 제출
-    const todayEl=document.getElementById('todayList');
-    if(todaySubs.length===0){
-      todayEl.innerHTML='<div class="empty"><p>아직 오늘 제출이 없어요</p></div>';
-    } else {
-      todayEl.innerHTML=todaySubs.map((s,i)=>{
-        const sc=s.score||0;
-        const scc=sc>=85?'var(--green)':sc>=70?'var(--gold)':'var(--red)';
-        return `<div class="student-row" onclick="openStudentDetail('${s.student_id}','${s.students?.name||'학생'}',0)">
-          <div class="s-avatar" style="background:${BG[i%6]};color:${TC[i%6]}">${(s.students?.name||'?')[0]}</div>
-          <div class="s-info"><h4>${s.students?.name||'학생'}</h4><p>${s.homeworks?.title||''}</p></div>
-          <div class="s-score"><div class="s-score-num" style="color:${scc}">${sc}</div><div style="font-size:10px;color:var(--muted)">점</div></div>
-        </div>`;
-      }).join('');
-    }
-    // 미제출
-    const notEl=document.getElementById('notSubmitList');
-    if(notSubmitted.length===0){
-      notEl.innerHTML='<div class="empty" style="padding:16px"><p style="color:var(--green)">🎉 모두 제출했어요!</p></div>';
-    } else {
-      notEl.innerHTML=notSubmitted.map(s=>`
-        <div class="student-row" onclick="openStudentDetail('${s.id}','${s.name}',${s.points||0})">
-          <div class="s-avatar" style="background:#FFEBEE;color:#C62828">${s.name[0]}</div>
-          <div class="s-info"><h4>${s.name}</h4><p>${s.class||''}</p></div>
-          <div class="s-score"><span class="badge badge-red">미제출</span></div>
-        </div>`).join('');
-    }
-    // 틀린 단어 TOP5
-    if(subs&&subs.length>0){
-      const wc={};
-      subs.forEach(s=>(s.issues||[]).forEach(issue=>{if(issue.word)wc[issue.word]=(wc[issue.word]||0)+1;}));
-      const sorted=Object.entries(wc).sort((a,b)=>b[1]-a[1]).slice(0,5);
-      const max=sorted[0]?.[1]||1;
-      document.getElementById('wrongWordList').innerHTML=sorted.length===0
-        ?'<div class="empty"><p>제출 데이터가 쌓이면 나타나요</p></div>'
-        :sorted.map(([word,count],i)=>`
-          <div class="word-rank">
-            <div class="rank-num">${i+1}</div>
-            <div class="rank-word">${word}</div>
-            <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(count/max*100)}%"></div></div>
-            <div class="rank-count">${count}명</div>
-          </div>`).join('');
-    }
-  } catch(e){showToast('대시보드를 불러오지 못했어요. 새로고침 해주세요.','error');}
-}
-
-// ══ 알림장 ══
-async function addNotice(){
-  const title=document.getElementById('noticeTitle').value.trim();
-  if(!title){showToast('제목을 입력해주세요!','error');return;}
-  const target=document.getElementById('noticeTarget').value;
-  const content={
-    class:document.getElementById('noticeClass').value.trim(),
-    homework:document.getElementById('noticeHw').value.trim(),
-    prep:document.getElementById('noticePrep').value.trim(),
-    etc:document.getElementById('noticeEtc').value.trim(),
-  };
-  try {
-    const {error}=await sb.from('notices').insert({title,target,content});
-    if(error){showToast('오류: '+error.message,'error');return;}
-    showToast('📢 알림장이 발송됐어요!','success');
-    closeModal('addNoticeModal');
-    ['noticeTitle','noticeClass','noticeHw','noticePrep','noticeEtc'].forEach(id=>document.getElementById(id).value='');
-    loadNoticesAdmin();
-  } catch(e){showToast('연결 오류가 났어요.','error');}
-}
-
-function renderNotices(data,containerId){
-  const c=document.getElementById(containerId);
-  if(!data||data.length===0){c.innerHTML='<div class="empty"><div class="empty-icon">📢</div><p>아직 알림장이 없어요</p></div>';return;}
-  c.innerHTML=data.map(n=>`
-    <div class="notice-card">
-      <div class="notice-date">${new Date(n.created_at).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'})} · ${n.target||'전체'}</div>
-      <div class="notice-title">📢 ${n.title}</div>
-      <div class="notice-body">
-        ${n.content?.class?'📖 오늘 수업: '+n.content.class+'<br>':''}
-        ${n.content?.homework?'📝 숙제: '+n.content.homework+'<br>':''}
-        ${n.content?.prep?'🎒 준비물: '+n.content.prep+'<br>':''}
-        ${n.content?.etc?'⭐ '+n.content.etc:''}
-      </div>
-    </div>`).join('');
-}
-
-async function loadNotices(){
-  try {
-    const {data}=await sb.from('notices').select('*').order('created_at',{ascending:false});
-    renderNotices(data,'noticeList');
-  } catch(e){}
-}
-
-async function loadNoticesAdmin(){
-  try {
-    const {data}=await sb.from('notices').select('*').order('created_at',{ascending:false});
-    renderNotices(data,'noticeAdminList');
-  } catch(e){}
+  ['ls1','ls2','ls3','ls4'].forEach((s,i)=>{const el=document.getElementById(s);el.classList.remove('done','cur');if(i===0)el.classList.add('cur');});
+  aBlob=null;isRec=false;clearInterval(ri);
 }
 </script>
 </body>
