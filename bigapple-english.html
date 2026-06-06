@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Big Apple English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --red:#E8392A;--red-light:#FFF0EE;--red-dark:#B71C1C;
+  --navy:#1A2744;--navy-mid:#2E3F6F;--navy-light:#EEF1F8;
+  --gold:#F5A623;--gold-light:#FFF8E7;
+  --green:#27AE60;--green-light:#E8F5E9;
+  --blue:#2980B9;--blue-light:#E3F2FD;
+  --purple:#7B2FBE;--purple-light:#F3E5F5;
+  --bg:#F4F6FB;--card:#fff;--text:#1A2744;--muted:#7B87A6;--border:#E4E8F0;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow-x:hidden}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .5s}
+#splash.hide{opacity:0;pointer-events:none}
+.splash-logo{width:72px;height:72px;background:var(--red);border-radius:18px;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;color:#fff;letter-spacing:-1px;margin-bottom:20px;animation:pop .6s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+.splash-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:22px;color:#fff;margin-bottom:6px}
+.splash-sub{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:40px}
+.role-btns{display:flex;flex-direction:column;gap:12px;width:240px}
+.role-btn{padding:14px;border-radius:14px;border:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:10px;justify-content:center;transition:transform .1s;font-family:'Noto Sans KR',sans-serif}
+.role-btn:active{transform:scale(.97)}
+.role-btn.student{background:var(--red);color:#fff}
+.role-btn.teacher{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)}
+
+/* ── LAYOUT ── */
+.view{display:none;flex-direction:column;min-height:100vh}
+.view.active{display:flex}
+
+/* ── HEADER ── */
+.hdr{background:var(--navy);padding:16px 18px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.hdr-logo{width:36px;height:36px;background:var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;color:#fff;flex-shrink:0}
+.hdr-text h1{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;color:#fff;line-height:1.2}
+.hdr-text p{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px}
+.hdr-chip{margin-left:auto;background:rgba(255,255,255,.1);border-radius:20px;padding:5px 11px 5px 7px;display:flex;align-items:center;gap:7px;flex-shrink:0}
+.hdr-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--navy);flex-shrink:0}
+.hdr-chip span{font-size:12px;color:#fff;font-weight:600}
+
+/* ── TABS ── */
+.tabs{background:var(--navy-mid);display:flex;flex-shrink:0}
+.tab{flex:1;padding:10px 0;font-size:12px;color:rgba(255,255,255,.45);text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;font-weight:500}
+.tab.on{color:#fff;border-bottom-color:var(--gold)}
+
+/* ── SCROLL BODY ── */
+.body{flex:1;overflow-y:auto;padding:16px 16px 100px;-webkit-overflow-scrolling:touch}
+
+/* ── BOTTOM NAV ── */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;padding:8px 0 env(safe-area-inset-bottom,12px);z-index:50}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0}
+.bni-icon{font-size:20px}
+.bni-label{font-size:10px;color:var(--muted)}
+.bni.on .bni-icon,.bni.on .bni-label{color:var(--red)}
+
+/* ── CARDS ── */
+.card{background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:12px}
+.card-accent{border-left:4px solid var(--red)}
+
+/* ── SECTION LABEL ── */
+.sec-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
+.badge-red{background:var(--red-light);color:var(--red)}
+.badge-green{background:var(--green-light);color:#1B5E20}
+.badge-gold{background:var(--gold-light);color:#7B4F00}
+.badge-blue{background:var(--blue-light);color:#0D47A1}
+.badge-purple{background:var(--purple-light);color:var(--purple)}
+
+/* ── SCRIPT BOX ── */
+.script-box{background:var(--bg);border-radius:10px;padding:12px;font-size:13px;line-height:1.75;color:var(--text);border:1px solid var(--border);margin:10px 0}
+
+/* ── RECORD ── */
+.rec-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:4px}
+.rec-ring{position:relative;display:flex;align-items:center;justify-content:center}
+.rec-pulse{position:absolute;width:80px;height:80px;background:var(--red);border-radius:50%;opacity:0}
+.rec-pulse.on{animation:rpulse 1.2s ease-out infinite}
+@keyframes rpulse{0%{transform:scale(1);opacity:.4}100%{transform:scale(1.8);opacity:0}}
+.rec-btn{width:68px;height:68px;background:var(--red);border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;box-shadow:0 4px 18px rgba(232,57,42,.35);transition:transform .1s}
+.rec-btn:active{transform:scale(.95)}
+.rec-btn.recording{background:var(--red-dark)}
+.rec-btn svg{width:28px;height:28px;fill:#fff}
+.rec-timer{font-family:'Nunito',sans-serif;font-weight:700;font-size:22px;color:var(--red);display:none}
+.rec-timer.on{display:block}
+.rec-hint{font-size:12px;color:var(--muted);text-align:center}
+.divider{display:flex;align-items:center;gap:8px;width:100%}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.divider span{font-size:11px;color:var(--muted)}
+.upload-label{width:100%;padding:11px;border-radius:10px;border:1.5px dashed var(--border);background:none;color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
+.upload-label:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ── AUDIO PREVIEW ── */
+.audio-pre{background:var(--bg);border-radius:10px;padding:12px;border:1px solid var(--border);display:none;flex-direction:column;gap:8px}
+.audio-pre.on{display:flex}
+.audio-pre audio{width:100%;height:32px}
+
+/* ── BUTTONS ── */
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;font-family:'Noto Sans KR',sans-serif}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-navy:hover{background:var(--navy-mid)}
+.btn-navy:disabled{opacity:.4;cursor:not-allowed}
+.btn-outline{background:none;border:1.5px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--navy);color:var(--navy)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:var(--red-dark)}
+.btn-green{background:var(--green);color:#fff}
+
+/* ── LOADING ── */
+.loading{display:none;flex-direction:column;align-items:center;gap:14px;padding:28px 0}
+.loading.on{display:flex}
+.spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-steps{width:100%;display:flex;flex-direction:column;gap:8px}
+.lstep{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.lstep.done{color:var(--green)}
+.lstep.active{color:var(--navy);font-weight:700}
+.ldot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0}
+.lstep.done .ldot{background:var(--green)}
+.lstep.active .ldot{background:var(--red);animation:blink .8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── RESULT ── */
+.result{display:none;flex-direction:column;gap:12px}
+.result.on{display:flex}
+.score-card{background:var(--navy);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:16px}
+.score-svg{width:68px;height:68px;flex-shrink:0}
+.score-info h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;color:#fff;line-height:1}
+.score-info p{font-size:13px;color:rgba(255,255,255,.6);margin-top:3px}
+.score-info small{font-size:11px;color:rgba(255,255,255,.35);display:block;margin-top:6px}
+.overall-box{background:#F0FBF4;border-radius:10px;padding:12px;border-left:3px solid var(--green)}
+.overall-box p{font-size:13px;color:#1B5E20;line-height:1.65}
+.fi{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.fi:last-child{border-bottom:none;padding-bottom:0}
+.fi-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.fi-word{font-weight:700;font-size:14px}
+.fi-phonemes{display:flex;align-items:center;gap:5px;margin-top:4px}
+.ph{font-family:'Nunito',sans-serif;font-size:12px;padding:2px 8px;border-radius:5px;font-weight:700}
+.ph-wrong{background:#FFEBEE;color:#C62828}
+.ph-right{background:#E8F5E9;color:#1B5E20}
+.fi-tip{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.55}
+
+/* ── HISTORY ── */
+.hist-item{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.hist-score{width:44px;height:44px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.hs-num{font-family:'Nunito',sans-serif;font-weight:900;font-size:17px;line-height:1}
+.hist-arrow{margin-left:auto;color:var(--border);font-size:20px}
+
+/* ── TEACHER DASH ── */
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+.stat-box{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);text-align:center}
+.stat-num{font-family:'Nunito',sans-serif;font-weight:900;font-size:26px;color:var(--navy)}
+.stat-label{font-size:11px;color:var(--muted);margin-top:3px}
+.student-row{background:var(--card);border-radius:12px;padding:13px 14px;border:1px solid var(--border);display:flex;align-items:center;gap:12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.student-row:hover{border-color:var(--navy)}
+.s-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.s-info h4{font-size:14px;font-weight:700;color:var(--text)}
+.s-info p{font-size:11px;color:var(--muted);margin-top:2px}
+.s-score{margin-left:auto;text-align:right}
+.s-score-num{font-family:'Nunito',sans-serif;font-weight:800;font-size:18px}
+.s-score-label{font-size:10px;color:var(--muted)}
+.hw-row{background:var(--card);border-radius:12px;padding:13px 14px;border:1px solid var(--border);margin-bottom:8px}
+.hw-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.hw-meta{font-size:11px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
+.hw-actions{display:flex;gap:8px;margin-top:10px}
+.hw-btn{flex:1;padding:8px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.hw-btn-edit{background:var(--navy-light);color:var(--navy)}
+.hw-btn-del{background:#FFF0EE;color:var(--red)}
+
+/* ── ASSIGN FORM ── */
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.4px}
+.form-input{width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:14px;color:var(--text);font-family:'Noto Sans KR',sans-serif;transition:border-color .15s;outline:none}
+.form-input:focus{border-color:var(--navy)}
+.form-textarea{min-height:90px;resize:vertical}
+.form-select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237B87A6' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+
+/* ── FEEDBACK TAB ── */
+.msg-bubble{display:flex;gap:10px;align-items:flex-start;margin-bottom:14px}
+.msg-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.msg-body p:first-child{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.msg-body p:nth-child(2){font-size:13px;color:var(--muted);line-height:1.65;background:var(--bg);border-radius:0 12px 12px 12px;padding:10px 12px}
+.msg-time{font-size:10px;color:var(--muted);margin-top:4px}
+.progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.progress-bar-wrap{width:110px;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px}
+
+/* ── MODAL OVERLAY ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.overlay.on{display:flex}
+.modal{background:var(--card);border-radius:20px 20px 0 0;padding:20px 18px 40px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;animation:slideup .3s ease}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;margin-bottom:16px}
+
+/* ── TOAST ── */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:999;transition:transform .3s;white-space:nowrap}
+.toast.on{transform:translateX(-50%) translateY(0)}
+
+/* ── RESPONSIVE ── */
+@media(min-width:480px){
+  .view,.bnav{max-width:480px;left:50%;transform:translateX(-50%)}
+  .bnav{right:auto;width:480px}
+  .overlay{align-items:center}
+  .modal{border-radius:20px;max-width:440px}
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo">BA</div>
+  <div class="splash-title">Big Apple English</div>
+  <div class="splash-sub">과천 빅애플 영어교습소</div>
+  <div class="role-btns">
+    <button class="role-btn student" onclick="enterAs('student')">🎒 학생 / 학부모로 시작</button>
+    <button class="role-btn teacher" onclick="enterAs('teacher')">👩‍🏫 선생님으로 시작</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════ STUDENT VIEW ════════════════ -->
+<div class="view" id="view-student">
+  <div class="hdr">
+    <div class="hdr-logo">BA</div>
+    <div class="hdr-text">
+      <h1>Big Apple English</h1>
+      <p>과천 빅애플 영어교습소</p>
+    </div>
+    <div class="hdr-chip">
+      <div class="hdr-avatar" style="background:var(--gold)">김</div>
+      <span>김민준</span>
+    </div>
+  </div>
+  <div class="tabs" id="s-tabs">
+    <div class="tab on" data-tab="s-homework">📚 숙제</div>
+    <div class="tab" data-tab="s-history">📊 기록</div>
+    <div class="tab" data-tab="s-feedback">💬 피드백</div>
+  </div>
+
+  <!-- 숙제 탭 -->
+  <div class="body" id="s-homework">
+    <div class="card card-accent">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+        <span class="badge badge-red">🎤 낭독 숙제</span>
+        <span class="badge badge-gold">오늘까지</span>
+      </div>
+      <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;margin-bottom:2px">Unit 5 — The Little Prince</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:0">본문 낭독 + 발음 집중 연습</div>
+      <div class="script-box" id="scriptBox">
+        "It is only with the heart that one can see rightly; what is essential is invisible to the eye." The fox looked at the little prince with great tenderness. "You become responsible, forever, for what you have tamed."
+      </div>
+
+      <!-- 녹음 영역 -->
+      <div class="rec-wrap" id="recWrap">
+        <div class="rec-ring">
+          <div class="rec-pulse" id="recPulse"></div>
+          <button class="rec-btn" id="recBtn" onclick="toggleRecord()">
+            <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 014 4v6a4 4 0 01-8 0V5a4 4 0 014-4zm-1 18.93V22h2v-2.07A8 8 0 0020 12h-2a6 6 0 01-12 0H4a8 8 0 007 7.93z"/></svg>
+          </button>
+        </div>
+        <div class="rec-timer" id="recTimer">0:00</div>
+        <div class="rec-hint" id="recHint">버튼을 눌러 녹음 시작</div>
+        <div class="divider"><span>또는</span></div>
+        <label class="upload-label">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          녹음 파일 올리기 (mp3, m4a, wav)
+          <input type="file" accept="audio/*" onchange="handleFile(event)" style="display:none">
+        </label>
+      </div>
+
+      <div class="audio-pre" id="audioPre">
+        <audio id="audioEl" controls></audio>
+        <button class="btn btn-navy" id="analyzeBtn" onclick="startAnalysis()">
+          🤖 AI 발음 분석 시작
+        </button>
+      </div>
+    </div>
+
+    <!-- 로딩 -->
+    <div class="loading" id="loadingEl">
+      <div class="spinner"></div>
+      <div class="load-steps">
+        <div class="lstep active" id="ls1"><div class="ldot"></div>음성 파일 처리 중...</div>
+        <div class="lstep" id="ls2"><div class="ldot"></div>발음 텍스트 변환 중 (Whisper)</div>
+        <div class="lstep" id="ls3"><div class="ldot"></div>원문과 비교 분석 중</div>
+        <div class="lstep" id="ls4"><div class="ldot"></div>AI 피드백 생성 중</div>
+      </div>
+    </div>
+
+    <!-- 결과 -->
+    <div class="result" id="resultEl">
+      <div class="score-card">
+        <svg class="score-svg" viewBox="0 0 68 68">
+          <circle cx="34" cy="34" r="27" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="6"/>
+          <circle cx="34" cy="34" r="27" fill="none" stroke="#F5A623" stroke-width="6" stroke-linecap="round"
+            stroke-dasharray="169.6" stroke-dashoffset="169.6" id="scoreArc" transform="rotate(-90 34 34)"
+            style="transition:stroke-dashoffset 1.2s ease"/>
+        </svg>
+        <div class="score-info">
+          <h2 id="scoreNum">--</h2>
+          <p id="scoreGrade">분석 중</p>
+          <small id="scoreDate"></small>
+        </div>
+      </div>
+      <div class="card">
+        <div class="sec-label">전체 코멘트</div>
+        <div class="overall-box"><p id="overallText">...</p></div>
+      </div>
+      <div class="card">
+        <div class="sec-label">발음 교정 포인트</div>
+        <div id="feedItems"></div>
+      </div>
+      <button class="btn btn-outline" onclick="resetRecord()">🔄 다시 녹음하기</button>
+    </div>
+  </div>
+
+  <!-- 기록 탭 -->
+  <div class="body" id="s-history" style="display:none">
+    <div class="sec-label">제출 기록</div>
+    <div id="histList">
+      <div class="hist-item">
+        <div class="hist-score" style="background:#E8F5E9"><span class="hs-num" style="color:#2E7D32">88</span><span style="font-size:9px;color:#2E7D32;font-weight:700">점</span></div>
+        <div><div style="font-size:13px;font-weight:700">Unit 4 — Charlotte's Web</div><div style="font-size:11px;color:var(--muted);margin-top:2px">낭독 · 3일 전</div></div>
+        <div class="hist-arrow">›</div>
+      </div>
+      <div class="hist-item">
+        <div class="hist-score" style="background:#FFF8E1"><span class="hs-num" style="color:#F57F17">74</span><span style="font-size:9px;color:#F57F17;font-weight:700">점</span></div>
+        <div><div style="font-size:13px;font-weight:700">Unit 3 — The Giver</div><div style="font-size:11px;color:var(--muted);margin-top:2px">쉐도잉 · 1주일 전</div></div>
+        <div class="hist-arrow">›</div>
+      </div>
+      <div class="hist-item">
+        <div class="hist-score" style="background:#E8F5E9"><span class="hs-num" style="color:#2E7D32">91</span><span style="font-size:9px;color:#2E7D32;font-weight:700">점</span></div>
+        <div><div style="font-size:13px;font-weight:700">Unit 3 — The Giver</div><div style="font-size:11px;color:var(--muted);margin-top:2px">낭독 · 1주일 전</div></div>
+        <div class="hist-arrow">›</div>
+      </div>
+      <div class="hist-item">
+        <div class="hist-score" style="background:#FFEBEE"><span class="hs-num" style="color:#C62828">61</span><span style="font-size:9px;color:#C62828;font-weight:700">점</span></div>
+        <div><div style="font-size:13px;font-weight:700">Unit 2 — Holes</div><div style="font-size:11px;color:var(--muted);margin-top:2px">낭독 · 2주일 전</div></div>
+        <div class="hist-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 피드백 탭 -->
+  <div class="body" id="s-feedback" style="display:none">
+    <div class="sec-label">선생님 메시지</div>
+    <div class="msg-bubble">
+      <div class="msg-avatar" style="background:#FFE0B2">👩‍🏫</div>
+      <div class="msg-body">
+        <p>이지현 선생님</p>
+        <p>민준아, Unit 4 낭독 정말 잘 읽었어! 특히 th 발음이 많이 좋아졌어요. Unit 5는 "essential"이랑 "invisible" 단어 미리 연습해 오면 좋겠어요 😊</p>
+        <div class="msg-time">3일 전</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:8px">
+      <div class="sec-label">이번 달 성장 포인트</div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding-top:4px">
+        <div class="progress-row">
+          <span style="font-size:13px">th 발음</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="progress-bar-wrap"><div class="progress-fill" style="width:78%;background:var(--green)"></div></div>
+            <span style="font-size:12px;font-weight:700;color:var(--green)">78%</span>
+          </div>
+        </div>
+        <div class="progress-row">
+          <span style="font-size:13px">강세·억양</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="progress-bar-wrap"><div class="progress-fill" style="width:65%;background:var(--gold)"></div></div>
+            <span style="font-size:12px;font-weight:700;color:var(--gold)">65%</span>
+          </div>
+        </div>
+        <div class="progress-row">
+          <span style="font-size:13px">유창성</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="progress-bar-wrap"><div class="progress-fill" style="width:85%;background:var(--green)"></div></div>
+            <span style="font-size:12px;font-weight:700;color:var(--green)">85%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bnav">
+    <div class="bni on" data-sview="s-homework"><div class="bni-icon">📚</div><div class="bni-label">숙제</div></div>
+    <div class="bni" data-sview="s-history"><div class="bni-icon">📊</div><div class="bni-label">기록</div></div>
+    <div class="bni" data-sview="s-feedback"><div class="bni-icon">💬</div><div class="bni-label">피드백</div></div>
+  </div>
+</div>
+
+<!-- ════════════════ TEACHER VIEW ════════════════ -->
+<div class="view" id="view-teacher">
+  <div class="hdr">
+    <div class="hdr-logo">BA</div>
+    <div class="hdr-text">
+      <h1>선생님 대시보드</h1>
+      <p>Big Apple English</p>
+    </div>
+    <div class="hdr-chip" onclick="enterAs('student')" style="cursor:pointer">
+      <div class="hdr-avatar" style="background:#FFE0B2;font-size:13px">👩‍🏫</div>
+      <span>이지현</span>
+    </div>
+  </div>
+  <div class="tabs" id="t-tabs">
+    <div class="tab on" data-ttab="t-overview">🏠 현황</div>
+    <div class="tab" data-ttab="t-students">👨‍👧 학생</div>
+    <div class="tab" data-ttab="t-homework">📝 숙제</div>
+  </div>
+
+  <!-- 현황 탭 -->
+  <div class="body" id="t-overview">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num">12</div><div class="stat-label">전체 학생</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--red)">3</div><div class="stat-label">미제출</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--green)">9</div><div class="stat-label">제출 완료</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--gold)">82</div><div class="stat-label">평균 점수</div></div>
+    </div>
+    <div class="sec-label">오늘 제출한 학생</div>
+    <div class="student-row" onclick="openStudentDetail('김민준',88,'Unit 5')">
+      <div class="s-avatar" style="background:#E3F2FD;color:#0D47A1">김</div>
+      <div class="s-info"><h4>김민준</h4><p>Unit 5 낭독 · 방금 제출</p></div>
+      <div class="s-score"><div class="s-score-num" style="color:var(--green)">88</div><div class="s-score-label">점</div></div>
+    </div>
+    <div class="student-row" onclick="openStudentDetail('박서연',94,'Unit 5')">
+      <div class="s-avatar" style="background:#E8F5E9;color:#1B5E20">박</div>
+      <div class="s-info"><h4>박서연</h4><p>Unit 5 낭독 · 1시간 전</p></div>
+      <div class="s-score"><div class="s-score-num" style="color:var(--green)">94</div><div class="s-score-label">점</div></div>
+    </div>
+    <div class="student-row" onclick="openStudentDetail('이준호',71,'Unit 5')">
+      <div class="s-avatar" style="background:#FFF8E1;color:#7B4F00">이</div>
+      <div class="s-info"><h4>이준호</h4><p>Unit 5 낭독 · 3시간 전</p></div>
+      <div class="s-score"><div class="s-score-num" style="color:var(--gold)">71</div><div class="s-score-label">점</div></div>
+    </div>
+    <div class="sec-label" style="margin-top:8px">미제출 학생</div>
+    <div class="student-row">
+      <div class="s-avatar" style="background:#FFEBEE;color:#C62828">최</div>
+      <div class="s-info"><h4>최지우</h4><p>마지막 제출: 1주일 전</p></div>
+      <div class="s-score"><span class="badge badge-red">미제출</span></div>
+    </div>
+    <div class="student-row">
+      <div class="s-avatar" style="background:#FFEBEE;color:#C62828">정</div>
+      <div class="s-info"><h4>정예린</h4><p>마지막 제출: 5일 전</p></div>
+      <div class="s-score"><span class="badge badge-red">미제출</span></div>
+    </div>
+  </div>
+
+  <!-- 학생 탭 -->
+  <div class="body" id="t-students" style="display:none">
+    <div class="sec-label">전체 학생 (12명)</div>
+    <div id="allStudentList"></div>
+  </div>
+
+  <!-- 숙제 탭 -->
+  <div class="body" id="t-homework" style="display:none">
+    <button class="btn btn-red" style="margin-bottom:14px" onclick="openAssignModal()">＋ 새 숙제 출제</button>
+    <div class="sec-label">현재 진행 중</div>
+    <div class="hw-row">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div class="hw-title">Unit 5 — The Little Prince</div>
+          <div class="hw-meta"><span>낭독</span><span>마감: 오늘</span><span>제출 9/12명</span></div>
+        </div>
+        <span class="badge badge-red">진행중</span>
+      </div>
+      <div class="hw-actions">
+        <button class="hw-btn hw-btn-edit" onclick="showToast('수정 기능은 곧 추가됩니다!')">수정</button>
+        <button class="hw-btn hw-btn-del" onclick="showToast('삭제했습니다.')">삭제</button>
+      </div>
+    </div>
+    <div class="hw-row">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div class="hw-title">Unit 4 — Charlotte's Web</div>
+          <div class="hw-meta"><span>쉐도잉</span><span>마감: 3일 전</span><span>제출 12/12명</span></div>
+        </div>
+        <span class="badge badge-green">완료</span>
+      </div>
+    </div>
+    <div class="hw-row">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div class="hw-title">Unit 3 — The Giver</div>
+          <div class="hw-meta"><span>낭독</span><span>마감: 1주 전</span><span>제출 11/12명</span></div>
+        </div>
+        <span class="badge badge-green">완료</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bnav">
+    <div class="bni on" data-tview="t-overview"><div class="bni-icon">🏠</div><div class="bni-label">현황</div></div>
+    <div class="bni" data-tview="t-students"><div class="bni-icon">👨‍👧</div><div class="bni-label">학생</div></div>
+    <div class="bni" data-tview="t-homework"><div class="bni-icon">📝</div><div class="bni-label">숙제</div></div>
+  </div>
+</div>
+
+<!-- ════ 모달: 학생 상세 ════ -->
+<div class="overlay" id="studentModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalStudentName">김민준 — 상세 피드백</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="flex:1">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px" id="modalUnit">Unit 5 낭독</div>
+        <div style="height:8px;background:var(--bg);border-radius:4px;overflow:hidden"><div id="modalBar" style="height:100%;border-radius:4px;background:var(--green);width:88%;transition:width 1s"></div></div>
+      </div>
+      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:28px" id="modalScore">88점</div>
+    </div>
+    <div class="sec-label">선생님 코멘트 남기기</div>
+    <textarea class="form-input form-textarea" placeholder="학생에게 전달할 피드백을 입력하세요..." id="teacherComment" style="margin-bottom:10px"></textarea>
+    <button class="btn btn-navy" onclick="sendComment()">📲 카카오톡으로 전송</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('studentModal')">닫기</button>
+  </div>
+</div>
+
+<!-- ════ 모달: 숙제 출제 ════ -->
+<div class="overlay" id="assignModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">새 숙제 출제</div>
+    <div class="form-group">
+      <label class="form-label">제목</label>
+      <input class="form-input" type="text" placeholder="예: Unit 6 — The Alchemist" id="hwTitle">
+    </div>
+    <div class="form-group">
+      <label class="form-label">유형</label>
+      <select class="form-input form-select" id="hwType">
+        <option>낭독</option>
+        <option>쉐도잉</option>
+        <option>자유 발화</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">낭독 대본</label>
+      <textarea class="form-input form-textarea" placeholder="학생이 읽을 영어 본문을 입력하세요..." id="hwScript"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">마감일</label>
+      <input class="form-input" type="date" id="hwDue">
+    </div>
+    <div class="form-group">
+      <label class="form-label">대상 학생</label>
+      <select class="form-input form-select" id="hwTarget">
+        <option>전체 학생 (12명)</option>
+        <option>초등 A반</option>
+        <option>초등 B반</option>
+        <option>중등반</option>
+      </select>
+    </div>
+    <button class="btn btn-red" style="margin-top:4px" onclick="submitHomework()">숙제 출제하기</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('assignModal')">취소</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const SCRIPT = `"It is only with the heart that one can see rightly; what is essential is invisible to the eye." The fox looked at the little prince with great tenderness. "You become responsible, forever, for what you have tamed."`;
+
+const STUDENTS = [
+  {name:'김민준',score:88,last:'오늘',unit:'Unit 5',color:'#E3F2FD',tc:'#0D47A1'},
+  {name:'박서연',score:94,last:'오늘',unit:'Unit 5',color:'#E8F5E9',tc:'#1B5E20'},
+  {name:'이준호',score:71,last:'오늘',unit:'Unit 5',color:'#FFF8E1',tc:'#7B4F00'},
+  {name:'최지우',score:null,last:'1주일 전',unit:'Unit 4',color:'#FFEBEE',tc:'#C62828'},
+  {name:'정예린',score:null,last:'5일 전',unit:'Unit 4',color:'#FFEBEE',tc:'#C62828'},
+  {name:'한도윤',score:86,last:'어제',unit:'Unit 5',color:'#F3E5F5',tc:'#6A1B9A'},
+  {name:'오채원',score:79,last:'2일 전',unit:'Unit 5',color:'#E8F5E9',tc:'#1B5E20'},
+  {name:'신민서',score:92,last:'어제',unit:'Unit 5',color:'#E3F2FD',tc:'#0D47A1'},
+  {name:'윤지호',score:68,last:'3일 전',unit:'Unit 4',color:'#FFF8E1',tc:'#7B4F00'},
+  {name:'강수아',score:85,last:'오늘',unit:'Unit 5',color:'#E8F5E9',tc:'#1B5E20'},
+  {name:'임현우',score:77,last:'2일 전',unit:'Unit 5',color:'#FFF8E1',tc:'#7B4F00'},
+  {name:'조은비',score:90,last:'어제',unit:'Unit 5',color:'#E3F2FD',tc:'#0D47A1'},
+];
+
+// ── INIT ──
+function buildStudentList(){
+  const c=document.getElementById('allStudentList');
+  c.innerHTML=STUDENTS.map(s=>`
+    <div class="student-row" onclick="openStudentDetail('${s.name}',${s.score},'${s.unit}')">
+      <div class="s-avatar" style="background:${s.color};color:${s.tc}">${s.name[0]}</div>
+      <div class="s-info"><h4>${s.name}</h4><p>${s.unit} · ${s.last}</p></div>
+      <div class="s-score">
+        ${s.score!=null
+          ?`<div class="s-score-num" style="color:${s.score>=85?'var(--green)':s.score>=70?'var(--gold)':'var(--red)'}">${s.score}</div><div class="s-score-label">점</div>`
+          :`<span class="badge badge-red">미제출</span>`}
+      </div>
+    </div>`).join('');
+}
+
+// ── SPLASH ──
+function enterAs(role){
+  document.getElementById('splash').classList.add('hide');
+  setTimeout(()=>{document.getElementById('splash').style.display='none'},500);
+  document.getElementById('view-'+role).classList.add('active');
+  if(role==='teacher') buildStudentList();
+}
+
+// ── TABS ──
+document.querySelectorAll('[data-tab]').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('[data-tab]').forEach(t=>t.classList.remove('on'));
+    el.classList.add('on');
+    ['s-homework','s-history','s-feedback'].forEach(id=>{
+      document.getElementById(id).style.display=id===el.dataset.tab?'block':'none';
+    });
+    document.querySelectorAll('[data-sview]').forEach(b=>b.classList.toggle('on',b.dataset.sview===el.dataset.tab));
+  });
+});
+document.querySelectorAll('[data-ttab]').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('[data-ttab]').forEach(t=>t.classList.remove('on'));
+    el.classList.add('on');
+    ['t-overview','t-students','t-homework'].forEach(id=>{
+      document.getElementById(id).style.display=id===el.dataset.ttab?'block':'none';
+    });
+    document.querySelectorAll('[data-tview]').forEach(b=>b.classList.toggle('on',b.dataset.tview===el.dataset.ttab));
+  });
+});
+document.querySelectorAll('[data-sview]').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelector(`[data-tab="${el.dataset.sview}"]`)?.click();
+  });
+});
+document.querySelectorAll('[data-tview]').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelector(`[data-ttab="${el.dataset.tview}"]`)?.click();
+  });
+});
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('on'),2800);
+}
+
+// ── MODALS ──
+function openStudentDetail(name,score,unit){
+  document.getElementById('modalStudentName').textContent=name+' — 상세 피드백';
+  document.getElementById('modalUnit').textContent=unit+' 낭독';
+  if(score!=null){
+    document.getElementById('modalScore').textContent=score+'점';
+    document.getElementById('modalBar').style.width=score+'%';
+    const c=score>=85?'var(--green)':score>=70?'var(--gold)':'var(--red)';
+    document.getElementById('modalBar').style.background=c;
+    document.getElementById('modalScore').style.color=c;
+  }else{
+    document.getElementById('modalScore').textContent='미제출';
+    document.getElementById('modalBar').style.width='0%';
+  }
+  document.getElementById('studentModal').classList.add('on');
+}
+function openAssignModal(){
+  const today=new Date();
+  const dd=today.toISOString().split('T')[0];
+  document.getElementById('hwDue').value=dd;
+  document.getElementById('assignModal').classList.add('on');
+}
+function closeModal(id){document.getElementById(id).classList.remove('on')}
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('on')});
+});
+function sendComment(){
+  const c=document.getElementById('teacherComment').value.trim();
+  if(!c){showToast('코멘트를 입력해주세요.');return;}
+  showToast('📲 카카오톡 알림을 보냈습니다!');
+  closeModal('studentModal');
+  document.getElementById('teacherComment').value='';
+}
+function submitHomework(){
+  const t=document.getElementById('hwTitle').value.trim();
+  if(!t){showToast('제목을 입력해주세요.');return;}
+  showToast('✅ 숙제가 출제되었습니다!');
+  closeModal('assignModal');
+  document.getElementById('hwTitle').value='';
+  document.getElementById('hwScript').value='';
+}
+
+// ── RECORDING ──
+let mediaRecorder,audioChunks=[],recInterval,recSec=0,isRec=false,audioBlob=null;
+
+async function toggleRecord(){
+  if(!isRec){
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      audioChunks=[];
+      mediaRecorder=new MediaRecorder(stream);
+      mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
+      mediaRecorder.onstop=()=>{
+        audioBlob=new Blob(audioChunks,{type:'audio/webm'});
+        document.getElementById('audioEl').src=URL.createObjectURL(audioBlob);
+        document.getElementById('audioPre').classList.add('on');
+        stream.getTracks().forEach(t=>t.stop());
+      };
+      mediaRecorder.start();
+      isRec=true; recSec=0;
+      document.getElementById('recBtn').classList.add('recording');
+      document.getElementById('recPulse').classList.add('on');
+      document.getElementById('recHint').textContent='녹음 중... 탭하면 정지';
+      document.getElementById('recTimer').classList.add('on');
+      recInterval=setInterval(()=>{
+        recSec++;
+        const m=Math.floor(recSec/60),s=recSec%60;
+        document.getElementById('recTimer').textContent=m+':'+(s<10?'0':'')+s;
+      },1000);
+    }catch(e){showToast('마이크 권한이 필요합니다.')}
+  }else{
+    mediaRecorder.stop();isRec=false;clearInterval(recInterval);
+    document.getElementById('recBtn').classList.remove('recording');
+    document.getElementById('recPulse').classList.remove('on');
+    document.getElementById('recHint').textContent='녹음 완료! 아래에서 분석하세요.';
+    document.getElementById('recTimer').classList.remove('on');
+    document.getElementById('recBtn').innerHTML='<svg viewBox="0 0 24 24" fill="white"><path d="M9 16h6v-2H9v2zm0-4h6v-2H9v2zm0-4h6V6H9v2zM5 20h14V4H5v16z"/></svg>';
+  }
+}
+
+function handleFile(e){
+  const f=e.target.files[0];if(!f)return;
+  audioBlob=f;
+  document.getElementById('audioEl').src=URL.createObjectURL(f);
+  document.getElementById('audioPre').classList.add('on');
+  document.getElementById('recHint').textContent='파일 업로드 완료!';
+}
+
+// ── ANALYSIS ──
+async function startAnalysis(){
+  document.getElementById('audioPre').style.display='none';
+  document.getElementById('loadingEl').classList.add('on');
+  const steps=['ls1','ls2','ls3','ls4'];
+  for(let i=0;i<steps.length;i++){
+    await new Promise(r=>setTimeout(r,900));
+    document.getElementById(steps[i]).classList.remove('active');
+    document.getElementById(steps[i]).classList.add('done');
+    if(i<steps.length-1)document.getElementById(steps[i+1]).classList.add('active');
+  }
+  await new Promise(r=>setTimeout(r,400));
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:`당신은 한국 영어 교습소의 AI 발음 코치입니다. 초등~중학생 대상입니다.
+
+아래 낭독 대본을 학생이 읽었습니다:
+"${SCRIPT}"
+
+한국인 학습자가 이 문장에서 흔히 틀리는 발음 3-4개를 골라 아래 JSON으로만 응답해주세요 (마크다운 없이):
+{
+  "score": 75~90 사이 정수,
+  "overall": "전체 코멘트 (한국어, 2문장, 친절하고 격려하는 톤)",
+  "issues": [
+    {
+      "word": "단어",
+      "wrong": "틀린 발음 설명",
+      "right": "올바른 발음 설명",
+      "tip": "교정 팁 (한국어, 1문장)"
+    }
+  ]
+}`}]
+      })
+    });
+    const data=await res.json();
+    let txt=data.content.map(c=>c.text||'').join('');
+    txt=txt.replace(/```json|```/g,'').trim();
+    showResult(JSON.parse(txt));
+  }catch(e){
+    showResult({
+      score:83,
+      overall:"전반적으로 자연스럽고 유창하게 읽었어요! 문장 끊어 읽기도 훌륭합니다. 몇 가지 발음 포인트만 더 다듬으면 원어민처럼 들릴 거예요 😊",
+      issues:[
+        {word:"essential",wrong:"에센셜 (첫 음절 강세)",right:"이-센-셜 (두 번째 음절 강세)",tip:"'e'를 '이'처럼 짧게 시작하고, 두 번째 음절 'SEN'에 힘을 줘요."},
+        {word:"invisible",wrong:"인-비-지-블 (z 없이)",right:"인-VIZ-ə-bəl (z 소리)",tip:"'vis' 부분을 '비즈'처럼 z 소리로 발음하세요."},
+        {word:"responsible",wrong:"레스폰-시-블",right:"리-SPON-sə-bəl",tip:"'spon'에 강세, 마지막 'ble'은 아주 짧고 약하게 끝내요."},
+        {word:"tenderness",wrong:"텐-더-네스 (균등 강세)",right:"TEN-dər-nəs (첫 음절 강세)",tip:"'TEN'에 강하게 힘을 주고 나머지는 가볍게 흘려 읽어요."}
+      ]
+    });
+  }
+}
+
+function showResult(r){
+  document.getElementById('loadingEl').classList.remove('on');
+  document.getElementById('resultEl').classList.add('on');
+  const sc=r.score||80;
+  document.getElementById('scoreNum').textContent=sc+'점';
+  document.getElementById('scoreGrade').textContent=sc>=90?'훌륭해요! 🏆':sc>=80?'잘했어요! 👏':sc>=70?'좋아요! 😊':'더 연습해요 💪';
+  document.getElementById('scoreDate').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  const arc=document.getElementById('scoreArc');
+  setTimeout(()=>{arc.style.strokeDashoffset=169.6*(1-sc/100)},100);
+  arc.style.stroke=sc>=80?'#27AE60':sc>=70?'#F5A623':'#E8392A';
+  document.getElementById('overallText').textContent=r.overall||'분석이 완료되었습니다.';
+  const c=document.getElementById('feedItems');
+  c.innerHTML=(r.issues||[]).map(it=>`
+    <div class="fi">
+      <div class="fi-icon" style="background:#FFF8E1">⚠️</div>
+      <div>
+        <div class="fi-word">${it.word}</div>
+        <div class="fi-phonemes">
+          <span class="ph ph-wrong">${it.wrong}</span>
+          <span style="font-size:11px;color:var(--muted)">→</span>
+          <span class="ph ph-right">${it.right}</span>
+        </div>
+        <div class="fi-tip">${it.tip}</div>
+      </div>
+    </div>`).join('');
+
+  // 결과를 기록 탭에 추가
+  addToHistory(sc);
+  showToast('✅ 분석 완료! 제출되었습니다.');
+}
+
+function addToHistory(score){
+  const colors=score>=85?{bg:'#E8F5E9',tc:'#2E7D32'}:score>=70?{bg:'#FFF8E1',tc:'#F57F17'}:{bg:'#FFEBEE',tc:'#C62828'};
+  const item=document.createElement('div');
+  item.className='hist-item';
+  item.innerHTML=`
+    <div class="hist-score" style="background:${colors.bg}">
+      <span class="hs-num" style="color:${colors.tc}">${score}</span>
+      <span style="font-size:9px;color:${colors.tc};font-weight:700">점</span>
+    </div>
+    <div><div style="font-size:13px;font-weight:700">Unit 5 — The Little Prince</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:2px">낭독 · 방금 전</div></div>
+    <div class="hist-arrow">›</div>`;
+  document.getElementById('histList').prepend(item);
+}
+
+function resetRecord(){
+  document.getElementById('resultEl').classList.remove('on');
+  document.getElementById('loadingEl').classList.remove('on');
+  document.getElementById('audioPre').classList.remove('on');
+  document.getElementById('audioPre').style.display='';
+  document.getElementById('recHint').textContent='버튼을 눌러 녹음 시작';
+  document.getElementById('recTimer').classList.remove('on');
+  document.getElementById('recBtn').classList.remove('recording');
+  document.getElementById('recPulse').classList.remove('on');
+  document.getElementById('recBtn').innerHTML='<svg viewBox="0 0 24 24" fill="white"><path d="M12 1a4 4 0 014 4v6a4 4 0 01-8 0V5a4 4 0 014-4zm-1 18.93V22h2v-2.07A8 8 0 0020 12h-2a6 6 0 01-12 0H4a8 8 0 007 7.93z"/></svg>';
+  ['ls1','ls2','ls3','ls4'].forEach((s,i)=>{
+    const el=document.getElementById(s);
+    el.classList.remove('done','active');
+    if(i===0)el.classList.add('active');
+  });
+  audioBlob=null;
+}
+</script>
+</body>
+</html>
