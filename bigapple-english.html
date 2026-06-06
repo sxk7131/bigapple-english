@@ -21,8 +21,8 @@
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow-x:hidden}
 
 /* SPLASH */
-#splash{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .5s}
-#splash.hide{opacity:0;pointer-events:none}
+#splash{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .5s}
+#splash.hide{opacity:0;pointer-events:none;z-index:-1}
 .splash-logo{width:80px;height:80px;background:var(--red);border-radius:20px;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:28px;color:#fff;margin-bottom:20px;animation:pop .6s cubic-bezier(.34,1.56,.64,1)}
 @keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
 .splash-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:24px;color:#fff;margin-bottom:6px}
@@ -544,24 +544,30 @@ let mediaRecorder, audioChunks=[], recInterval, recSec=0, isRec=false, audioBlob
 // ══ 스플래시 ══
 function goSplash() {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('on'));
   const sp = document.getElementById('splash');
   sp.style.display='flex';
+  sp.style.zIndex='100';
   sp.classList.remove('hide');
   currentStudentId = null;
 }
 
 function enterAs(role) {
-  document.getElementById('splash').classList.add('hide');
-  setTimeout(()=>document.getElementById('splash').style.display='none', 500);
-  if(role==='student') {
-    document.getElementById('view-student').classList.add('active');
-    openModal('studentLoginModal');
-    setTimeout(()=>document.getElementById('loginName').focus(), 400);
-  } else {
-    document.getElementById('view-teacher').classList.add('active');
-    openModal('teacherLoginModal');
-    setTimeout(()=>document.getElementById('teacherPw').focus(), 400);
-  }
+  const splash = document.getElementById('splash');
+  splash.classList.add('hide');
+  splash.style.zIndex = '-1';
+  setTimeout(()=>{
+    splash.style.display='none';
+    if(role==='student') {
+      document.getElementById('view-student').classList.add('active');
+      openModal('studentLoginModal');
+      setTimeout(()=>{ try{document.getElementById('loginName').focus()}catch(e){} }, 400);
+    } else {
+      document.getElementById('view-teacher').classList.add('active');
+      openModal('teacherLoginModal');
+      setTimeout(()=>{ try{document.getElementById('teacherPw').focus()}catch(e){} }, 400);
+    }
+  }, 300);
 }
 
 // ══ 선생님 로그인 ══
