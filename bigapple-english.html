@@ -366,6 +366,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto S
   </div>
 </div>
 
+<!-- ══ 모달: 학생 로그인 ══ -->
+<div class="overlay" id="studentLoginModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:40px;margin-bottom:8px">🎒</div>
+      <div class="modal-title" style="text-align:center">내 이름을 입력해주세요</div>
+      <div style="font-size:13px;color:var(--muted)">선생님이 등록한 이름으로 입력해요</div>
+    </div>
+    <div class="form-group">
+      <input class="form-input" id="loginName" placeholder="예: 김민준" style="font-size:18px;text-align:center;padding:16px">
+    </div>
+    <button class="btn btn-red" onclick="submitStudentLogin()">시작하기 🍎</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('studentLoginModal');document.getElementById('splash').style.display='flex';document.getElementById('splash').classList.remove('hide');document.getElementById('view-student').classList.remove('active')">돌아가기</button>
+  </div>
+</div>
+
 <!-- ══ 모달: 학생 추가 ══ -->
 <div class="overlay" id="addStudentModal">
   <div class="modal">
@@ -565,10 +582,14 @@ function enterAs(role) {
 }
 
 function showStudentLogin() {
-  // 간단히 이름으로 학생 찾기
-  const name = prompt('학생 이름을 입력해주세요:');
-  if(!name) { enterAs('student'); return; }
-  loadStudentData(name.trim());
+  openModal('studentLoginModal');
+}
+
+function submitStudentLogin() {
+  const name = document.getElementById('loginName').value.trim();
+  if(!name) { showToast('이름을 입력해주세요!'); return; }
+  closeModal('studentLoginModal');
+  loadStudentData(name);
 }
 
 async function loadStudentData(name) {
