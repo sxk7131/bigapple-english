@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#121C33">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Reading Roots">
+<title>Reading Roots · Big Apple English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --navy:#121C33;--navy2:#1C2846;--navy3:#0E1628;--line:#2C3A5E;
+  --cream:#F5EFE3;--cream2:#FBF8F1;--sand:#E2D8C3;
+  --orange:#E8843C;--orange2:#E8A36B;--rust:#A4561C;
+  --ink:#121C33;--muted:#5A6380;--soft:#B7C0D4;
+  --good:#2E7A4C;--goodbg:#D7EEDF;--warn:#7E3F12;--warnbg:#F6D3B5;
+  --wood:#8A5A36;--wood2:#5E3B22;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--navy);color:var(--cream);font-family:'Noto Sans KR',system-ui,sans-serif;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.serif{font-family:'Playfair Display',Georgia,serif}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px 96px}
+.twrap{max-width:1100px;margin:0 auto;padding:0 16px 80px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand small{display:block;font-size:10.5px;letter-spacing:2.4px;font-weight:700;color:var(--orange2)}
+.brand span{font-size:12.5px;color:var(--soft)}
+.top{display:flex;align-items:center;justify-content:space-between;padding:20px 0 0;gap:12px}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--soft);border-radius:999px;padding:8px 14px;font-size:13px;min-height:40px}
+h1.title{margin:18px 0 4px;font-family:'Playfair Display',Georgia,serif;font-weight:600;font-size:34px;line-height:1.1}
+h1.title em{font-weight:500;color:var(--orange2)}
+.sub{margin:0;color:var(--soft);font-size:13.5px}
+.card{background:var(--cream);color:var(--ink);border-radius:18px;padding:16px}
+.today{margin-top:18px;display:flex;align-items:center;gap:14px;width:100%;border:0;text-align:left}
+.today .mini{width:46px;height:62px;flex-shrink:0;border-radius:4px 6px 6px 4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff}
+.today .t1{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--rust)}
+.today .t2{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:600}
+.today .t3{font-size:12.5px;color:#4A5470}
+.today .go{margin-left:auto;width:46px;height:46px;border-radius:999px;background:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.notice{margin-top:12px;background:#24365F;border:1px solid #34497A;border-radius:14px;padding:12px 14px;font-size:13.5px;color:var(--cream);width:100%;text-align:left}
+.notice b{color:var(--orange2)}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:18px}
+.tab{border:1px solid var(--line);background:transparent;color:#D7DCE8;border-radius:12px;padding:8px 0;font-weight:700;font-size:13px;line-height:1.3;min-height:48px}
+.tab small{display:block;font-weight:500;font-size:11px}
+.tab.on{background:var(--cream);color:var(--ink);border-color:var(--cream)}
+.shelfhead{display:flex;justify-content:space-between;align-items:baseline;margin:16px 2px 8px}
+.shelfhead b{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:600}
+.shelfhead span{font-size:12.5px;font-weight:700;color:var(--orange2)}
+.row{display:flex;gap:3px;align-items:flex-end;height:70px;padding:0 4px}
+.board{height:8px;margin-bottom:10px;border-radius:3px;background:var(--wood);box-shadow:0 3px 0 var(--wood2),0 10px 18px rgba(0,0,0,.45)}
+.spine{width:calc((100% - 13*3px)/14);max-width:26px;border:0;padding:5px 0 0;border-radius:3px 3px 2px 2px;display:flex;justify-content:center;align-items:flex-start;background:#1E2A48;box-shadow:inset 3px 0 0 rgba(0,0,0,.25)}
+.spine span{writing-mode:vertical-rl;font-size:9.5px;font-weight:700;letter-spacing:.3px;color:#7F8DB0}
+.spine.read{box-shadow:inset 3px 0 0 rgba(0,0,0,.18),0 6px 10px rgba(0,0,0,.35)}
+.spine.read span{color:#fff}
+.spine.read.light span{color:var(--ink)}
+.spine.next{outline:2px solid var(--orange);outline-offset:2px}
+.hint{margin:4px 2px 0;font-size:12.5px;color:var(--soft)}
+/* sheet */
+.sheet{position:fixed;inset:0;background:rgba(5,9,20,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.panel{background:var(--navy);width:100%;max-width:560px;max-height:94vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 18px 32px;border-top:1px solid var(--line)}
+.panel .close{float:right}
+.bookhead{display:flex;gap:14px;align-items:center;margin-top:6px}
+.bookhead .mini{width:62px;height:84px;border-radius:3px 7px 7px 3px;display:flex;align-items:flex-end;padding:8px;color:#fff;font-weight:700;font-size:15px;flex-shrink:0}
+.bookhead h2{margin:0;font-family:'Playfair Display',Georgia,serif;font-weight:600;font-size:22px;line-height:1.2}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;margin-top:6px}
+.pill.read{background:var(--goodbg);color:#1F5E38}
+.pill.new{background:#2A2F3A;color:var(--orange2);border:1px solid #4A3A2A}
+.step{margin-top:16px;background:var(--navy2);border:1px solid var(--line);border-radius:16px;padding:14px}
+.step h3{margin:0 0 10px;font-size:14px;color:var(--orange2);letter-spacing:.5px}
+.video{position:relative;width:100%;padding-top:56.25%;border-radius:12px;overflow:hidden;background:#000}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.dots{display:flex;gap:10px;align-items:center}
+.dot{width:44px;height:44px;border-radius:999px;border:2px solid #4A5A80;background:transparent;color:var(--soft);font-weight:700}
+.dot.on{background:var(--orange);border-color:var(--orange);color:var(--ink)}
+.recbox{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0}
+.recbtn{width:96px;height:96px;border-radius:999px;border:0;background:var(--orange);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 28px rgba(0,0,0,.4)}
+.recbtn.on{background:#F2A35E;box-shadow:0 0 0 12px rgba(232,132,60,.25),0 0 0 24px rgba(232,132,60,.12)}
+.timer{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:16px}
+audio{width:100%}
+.btn{border:0;border-radius:14px;min-height:50px;padding:0 18px;font-weight:700;font-size:15px}
+.btn.primary{background:var(--cream);color:var(--ink)}
+.btn.orange{background:var(--orange);color:var(--ink)}
+.btn.dark{background:var(--navy);color:var(--cream)}
+.btn.line{background:transparent;border:1px solid var(--line);color:var(--cream)}
+.btn:disabled{opacity:.5;cursor:default}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+.hist{margin-top:10px;display:flex;flex-direction:column;gap:10px}
+.hist .item{background:var(--navy3);border:1px solid var(--line);border-radius:12px;padding:12px}
+.fb{margin-top:8px;background:var(--cream);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.55;white-space:pre-wrap}
+.done{text-align:center;padding:10px 0}
+.done .big{font-size:44px}
+/* login */
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.lbox{width:100%;max-width:400px}
+.lbox h1{text-align:center;margin:18px 0 4px}
+.lbox .sub{text-align:center}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:22px 0 14px;background:var(--navy3);border:1px solid #22304F;border-radius:14px;padding:5px}
+.seg button{border:0;border-radius:10px;min-height:44px;background:transparent;color:#D7DCE8;font-weight:700}
+.seg button.on{background:var(--orange);color:var(--ink)}
+label{display:block;font-size:13px;color:var(--soft);margin:12px 2px 6px}
+.input{width:100%;min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--navy2);color:var(--cream);padding:0 14px;font-size:17px}
+.input.pin{letter-spacing:10px;font-size:24px;text-align:center}
+.err{color:#FFB4A0;font-size:13.5px;margin:10px 2px 0;min-height:18px}
+/* teacher */
+.tt{background:var(--cream2);color:var(--ink);min-height:100vh}
+.thead{background:var(--navy);color:var(--cream)}
+.thead .twrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-top:18px;padding-bottom:18px}
+.ttabs{display:flex;flex-wrap:wrap;gap:8px}
+.ttab{border:1px solid var(--line);background:transparent;color:#D7DCE8;border-radius:999px;min-height:42px;padding:0 16px;font-weight:700;font-size:13.5px}
+.ttab.on{background:var(--orange);color:var(--ink);border-color:var(--orange)}
+.badge{display:inline-block;min-width:20px;padding:1px 7px;border-radius:999px;background:var(--navy);color:var(--cream);font-size:12px;margin-left:4px}
+.ttab.on .badge{background:var(--ink)}
+.tcard{background:#fff;border:1px solid var(--sand);border-radius:16px;padding:16px}
+.tlist{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+.tmeta{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;font-size:13px;color:var(--muted)}
+.tmeta b{font-size:16px;color:var(--ink)}
+.tarea{width:100%;min-height:84px;border-radius:12px;border:1px solid #D9CBB0;background:var(--cream2);padding:10px 12px;font-size:14.5px;line-height:1.55;color:var(--ink);resize:vertical}
+.trow{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.tbtn{border:1px solid #D9CBB0;background:#fff;color:var(--ink);border-radius:10px;min-height:42px;padding:0 14px;font-weight:700;font-size:13.5px}
+.tbtn.dark{background:var(--navy);color:var(--cream);border-color:var(--navy)}
+.tbtn.orange{background:var(--orange);border-color:var(--orange)}
+.tablebox{overflow-x:auto;margin-top:18px;border:1px solid var(--sand);border-radius:16px;background:#fff}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th{background:#FBF8F1;color:var(--muted);font-weight:500;font-size:12.5px;text-align:left;padding:12px}
+td{padding:12px;border-top:1px solid #EEE6D6;vertical-align:middle}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px}
+.tag.ok{background:var(--goodbg);color:#1F5E38}
+.tag.wait{background:var(--warnbg);color:var(--warn)}
+.tag.gift{background:#FFE7A8;color:#6B4E0E}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:18px}
+.form label{color:var(--muted)}
+.tinput{width:100%;min-height:46px;border-radius:10px;border:1px solid #D9CBB0;background:#fff;padding:0 12px;font-size:15px;color:var(--ink)}
+.copybox{margin-top:14px;background:var(--cream);border:1px dashed #C9B48F;border-radius:12px;padding:12px 14px;white-space:pre-wrap;font-size:14px;line-height:1.6}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--cream);color:var(--ink);padding:12px 18px;border-radius:12px;font-weight:700;font-size:14px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:90vw;text-align:center}
+.empty{color:var(--muted);text-align:center;padding:30px 10px}
+@media (max-width:380px){h1.title{font-size:30px}}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<section id="scrLogin" class="login hidden">
+  <div class="lbox">
+    <div style="display:flex;justify-content:center"><span id="logoBig"></span></div>
+    <h1 class="title">Reading <em>Roots</em></h1>
+    <p class="sub">Big Apple English 다독 라이브러리</p>
+    <div class="seg" role="tablist">
+      <button id="segStu" class="on" type="button">학생</button>
+      <button id="segTea" type="button">선생님</button>
+    </div>
+    <form id="formStu" autocomplete="on">
+      <label for="stuId">아이디</label>
+      <input id="stuId" class="input" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username" required>
+      <label for="stuPin">비밀번호 (숫자 4자리)</label>
+      <input id="stuPin" class="input pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="current-password" required>
+      <p id="stuErr" class="err"></p>
+      <button class="btn orange" style="width:100%;margin-top:6px" id="stuBtn">들어가기</button>
+    </form>
+    <form id="formTea" class="hidden" autocomplete="on">
+      <label for="teaEmail">이메일</label>
+      <input id="teaEmail" class="input" type="email" autocomplete="username" required>
+      <label for="teaPw">비밀번호</label>
+      <input id="teaPw" class="input" type="password" autocomplete="current-password" required>
+      <p id="teaErr" class="err"></p>
+      <button class="btn orange" style="width:100%;margin-top:6px" id="teaBtn">선생님으로 들어가기</button>
+    </form>
+  </div>
+</section>
+
+<!-- 학생 -->
+<section id="scrStudent" class="hidden">
+  <div class="wrap">
+    <div class="top">
+      <div class="brand"><span id="logoSm"></span><div><small>BIG APPLE ENGLISH</small><span id="stuLabel"></span></div></div>
+      <button class="ghost" id="stuLogout" type="button">로그아웃</button>
+    </div>
+    <h1 class="title">Reading <em>Roots</em></h1>
+    <p class="sub">한 권 다 읽고 녹음하면, 책꽂이에 색깔 책이 꽂혀요</p>
+    <div id="fbNotice"></div>
+    <div id="todayBox"></div>
+    <div class="tabs" id="lvTabs"></div>
+    <div id="shelf"></div>
+  </div>
+</section>
+
+<!-- 선생님 -->
+<section id="scrTeacher" class="tt hidden">
+  <div class="thead">
+    <div class="twrap">
+      <div class="brand"><span id="logoT"></span><div><small>BIG APPLE ENGLISH</small><span class="serif" style="font-size:20px;color:var(--cream)">Reading Roots <em style="color:var(--orange2)">Dashboard</em></span></div></div>
+      <div class="ttabs">
+        <button class="ttab on" data-t="pending" type="button">새 녹음<span class="badge" id="pendCount">0</span></button>
+        <button class="ttab" data-t="students" type="button">학생</button>
+        <button class="ttab" data-t="add" type="button">학생 추가</button>
+        <button class="ghost" id="teaLogout" type="button">로그아웃</button>
+      </div>
+    </div>
+  </div>
+  <div class="twrap">
+    <div id="tPending"></div>
+    <div id="tStudents" class="hidden"></div>
+    <div id="tAdd" class="hidden"></div>
+  </div>
+</section>
+
+<div id="sheet" class="sheet hidden" role="dialog" aria-modal="true"><div class="panel" id="panel"></div></div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+// ───────── 설정 ─────────
+const SB_URL = 'https://cazdfejatsahzzakuxmq.supabase.co';
+const SB_KEY = 'sb_publishable_G47SCxG-fP1kdgJCtt-pRg_nguu35Gs';
+const STUDENT_DOMAIN = 'students.bigapple-english.app';
+const APP_URL = 'https://bigapple-english.vercel.app';
+const LEVELS = [1, 2, 3];
+const COLORS = ['#3E7C59','#E5B93F','#2F5D8A','#D9724A','#4E8F86','#6C5A9C','#B04A4A'];
+const LIGHT = { '#E5B93F': true };
+
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const pwFor = (pin) => `rr-${pin}-bigapple`;
+const emailFor = (loginId) => `${loginId.toLowerCase()}@${STUDENT_DOMAIN}`;
+const bookColor = (b) => COLORS[(b.level * 7 + b.num) % COLORS.length];
+const fmtDate = (d) => { const x = new Date(d); return `${x.getMonth()+1}/${x.getDate()} ${String(x.getHours()).padStart(2,'0')}:${String(x.getMinutes()).padStart(2,'0')}`; };
+
+function logo(size) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 38 38" role="img" aria-label="Big Apple English"><circle cx="19" cy="19" r="17.5" fill="#F5EFE3" stroke="#E8843C" stroke-width="3"/><path d="M10 14.5c3-1.2 6-1 9 .8v10c-3-1.8-6-2-9-.8z" fill="#1F2E52"/><path d="M28 14.5c-3-1.2-6-1-9 .8v10c3-1.8 6-2 9-.8z" fill="#E8843C"/></svg>`;
+}
+$('logoBig').innerHTML = logo(64); $('logoSm').innerHTML = logo(38); $('logoT').innerHTML = logo(40);
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add('hidden'), 2600);
+}
+function show(id) {
+  ['scrLogin','scrStudent','scrTeacher'].forEach((s) => $(s).classList.toggle('hidden', s !== id));
+  window.scrollTo(0, 0);
+}
+function openSheet(html) { $('panel').innerHTML = html; $('sheet').classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+function closeSheet() { stopRecording(true); $('sheet').classList.add('hidden'); $('panel').innerHTML = ''; document.body.style.overflow = ''; }
+$('sheet').addEventListener('click', (e) => { if (e.target.id === 'sheet') closeSheet(); });
+
+// ───────── 상태 ─────────
+const S = { user: null, role: null, me: null, books: [], subs: [], level: 1 };
+
+// ───────── 로그인 ─────────
+$('segStu').onclick = () => { $('segStu').classList.add('on'); $('segTea').classList.remove('on'); $('formStu').classList.remove('hidden'); $('formTea').classList.add('hidden'); };
+$('segTea').onclick = () => { $('segTea').classList.add('on'); $('segStu').classList.remove('on'); $('formTea').classList.remove('hidden'); $('formStu').classList.add('hidden'); };
+
+$('formStu').onsubmit = async (e) => {
+  e.preventDefault();
+  const id = $('stuId').value.trim().toLowerCase(), pin = $('stuPin').value.trim();
+  $('stuErr').textContent = '';
+  if (!/^[0-9]{4}$/.test(pin)) { $('stuErr').textContent = '비밀번호는 숫자 4자리예요.'; return; }
+  $('stuBtn').disabled = true; $('stuBtn').textContent = '확인 중…';
+  const { error } = await sb.auth.signInWithPassword({ email: emailFor(id), password: pwFor(pin) });
+  $('stuBtn').disabled = false; $('stuBtn').textContent = '들어가기';
+  if (error) { $('stuErr').textContent = '아이디나 비밀번호가 맞지 않아요. 선생님께 물어보세요.'; return; }
+  await route();
+};
+$('formTea').onsubmit = async (e) => {
+  e.preventDefault();
+  $('teaErr').textContent = ''; $('teaBtn').disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $('teaEmail').value.trim(), password: $('teaPw').value });
+  $('teaBtn').disabled = false;
+  if (error) { $('teaErr').textContent = '이메일이나 비밀번호가 맞지 않아요.'; return; }
+  await route();
+};
+async function logout() {
+  await sb.auth.signOut(); S.user = S.role = S.me = null; S.subs = [];
+  $('segStu').click(); $('stuPin').value = ''; $('teaPw').value = '';
+  show('scrLogin');
+}
+$('stuLogout').onclick = logout; $('teaLogout').onclick = logout;
+
+async function route() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { show('scrLogin'); return; }
+  S.user = session.user;
+  const { data: t } = await sb.from('rr_teachers').select('user_id,name').eq('user_id', S.user.id).maybeSingle();
+  if (t) { S.role = 'teacher'; S.me = t; show('scrTeacher'); await loadBooks(); teacherTab('pending'); return; }
+  const { data: s, error } = await sb.from('rr_students').select('*').eq('user_id', S.user.id).maybeSingle();
+  if (s && s.active) {
+    S.role = 'student'; S.me = s; S.level = s.level || 1;
+    sb.rpc('rr_touch_login');
+    show('scrStudent'); await loadStudent(); return;
+  }
+  await sb.auth.signOut();
+  show('scrLogin');
+  $('stuErr').textContent = error ? '연결에 문제가 있어요. 잠시 뒤 다시 해 주세요.' : '등록되지 않은 계정이에요. 선생님께 물어보세요.';
+}
+
+async function loadBooks() {
+  if (S.books.length) return;
+  const { data } = await sb.from('rr_books').select('id,series,level,num,title,video_drive_id').order('level').order('num');
+  S.books = data || [];
+}
+const bookById = (id) => S.books.find((b) => b.id === id);
+
+// ───────── 학생 화면 ─────────
+async function loadStudent() {
+  await loadBooks();
+  const { data } = await sb.from('rr_submissions').select('id,book_id,audio_path,created_at,feedback,feedback_at').eq('student_id', S.user.id).order('created_at', { ascending: false });
+  S.subs = data || [];
+  renderStudent();
+  const want = new URLSearchParams(location.search).get('book');
+  if (want && bookById(want)) { history.replaceState(null, '', location.pathname); openBook(want); }
+}
+const readSet = () => new Set(S.subs.map((x) => x.book_id));
+function nextBook(level) {
+  const read = readSet();
+  return S.books.find((b) => b.level === level && !read.has(b.id)) || null;
+}
+function renderStudent() {
+  $('stuLabel').textContent = `${S.me.name}${S.me.class_name ? ' · ' + S.me.class_name : ''}`;
+  const read = readSet();
+  const fresh = S.subs.filter((x) => x.feedback && Date.now() - new Date(x.feedback_at).getTime() < 7 * 864e5);
+  $('fbNotice').innerHTML = fresh.length
+    ? `<button class="notice" type="button" id="fbBtn"><b>선생님 피드백 ${fresh.length}개</b>가 도착했어요. 눌러서 확인해요</button>` : '';
+  if (fresh.length) $('fbBtn').onclick = () => openBook(fresh[0].book_id);
+
+  const nb = nextBook(S.me.level || 1);
+  $('todayBox').innerHTML = nb ? `
+    <button class="card today" type="button" id="todayBtn">
+      <span class="mini" style="background:${bookColor(nb)};${LIGHT[bookColor(nb)] ? 'color:#121C33' : ''}">${esc(nb.id)}</span>
+      <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
+        <span class="t1">오늘의 낭독</span>
+        <span class="t2">${esc(nb.title)}</span>
+        <span class="t3">ORT ${esc(nb.id)} · 한 권 전체 · 듣기 → 3번 읽기 → 녹음</span>
+      </span>
+      <span class="go">${micIcon('#F5EFE3', 20)}</span>
+    </button>` : `<div class="card today"><span style="font-weight:700">Level ${S.me.level} 책을 모두 읽었어요! 선생님께 다음 레벨을 물어보세요.</span></div>`;
+  if (nb) $('todayBtn').onclick = () => openBook(nb.id);
+
+  $('lvTabs').innerHTML = LEVELS.map((lv) => {
+    const n = S.books.filter((b) => b.level === lv).length;
+    return `<button class="tab ${lv === S.level ? 'on' : ''}" data-lv="${lv}" type="button">Level ${lv}<small>${n}권</small></button>`;
+  }).join('');
+  $('lvTabs').querySelectorAll('.tab').forEach((b) => b.onclick = () => { S.level = +b.dataset.lv; renderStudent(); });
+
+  const books = S.books.filter((b) => b.level === S.level);
+  const done = books.filter((b) => read.has(b.id)).length;
+  const nextId = nb && nb.level === S.level ? nb.id : null;
+  let rows = '';
+  for (let i = 0; i < books.length; i += 14) {
+    const chunk = books.slice(i, i + 14).map((b) => {
+      const isRead = read.has(b.id), c = bookColor(b), h = 54 + ((b.num * 7) % 11);
+      const cls = ['spine', isRead ? 'read' : '', isRead && LIGHT[c] ? 'light' : '', b.id === nextId ? 'next' : ''].join(' ');
+      return `<button class="${cls}" style="height:${h}px;${isRead ? 'background:' + c : ''}" data-b="${esc(b.id)}" aria-label="ORT ${esc(b.id)} ${esc(b.title)}${isRead ? ' 읽음' : ''}" type="button"><span>${esc(b.id)}</span></button>`;
+    }).join('');
+    rows += `<div class="row">${chunk}</div><div class="board" aria-hidden="true"></div>`;
+  }
+  $('shelf').innerHTML = `
+    <div class="shelfhead"><b>ORT Level ${S.level}</b><span>${done} / ${books.length}권 꽂음</span></div>
+    ${rows}
+    <p class="hint">${done === books.length && books.length ? `Level ${S.level} 완독! 선생님께 선물 받으러 가요 🎁` : '책을 눌러서 열어요. 다 읽고 녹음하면 흐린 책이 색깔 책으로 바뀌어요'}</p>`;
+  $('shelf').querySelectorAll('.spine').forEach((b) => b.onclick = () => openBook(b.dataset.b));
+}
+function micIcon(color, size) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>`;
+}
+
+// ───────── 책 열기 + 녹음 ─────────
+const R = { rec: null, chunks: [], blob: null, mime: '', start: 0, tick: null, stream: null, reads: 0, book: null };
+
+function openBook(id) {
+  const b = bookById(id); if (!b) return;
+  R.book = b; R.reads = 0; R.blob = null;
+  const mine = S.subs.filter((x) => x.book_id === id);
+  const c = bookColor(b);
+  const video = b.video_drive_id
+    ? `<div class="video"><iframe src="https://drive.google.com/file/d/${encodeURIComponent(b.video_drive_id)}/preview" allow="autoplay; fullscreen" allowfullscreen title="${esc(b.title)} 영상"></iframe></div>`
+    : `<p style="margin:0;color:var(--soft);font-size:14px">이 책은 영상이 아직 없어요. 이북이나 종이책을 보며 원어민 음원을 들어요.</p>`;
+  openSheet(`
+    <button class="ghost close" type="button" id="xBtn">닫기</button>
+    <div class="bookhead">
+      <span class="mini" style="background:${c};${LIGHT[c] ? 'color:#121C33' : ''}">${esc(b.id)}</span>
+      <div><h2>${esc(b.title)}</h2>
+        <div style="font-size:13px;color:var(--soft)">ORT Level ${b.level} · ${b.num}번 · 한 권 전체</div>
+        ${mine.length ? `<span class="pill read">읽음 · ${mine.length}번 녹음</span>` : `<span class="pill new">아직 안 읽음</span>`}
+      </div>
+    </div>
+    <div class="step"><h3>1 · 듣기</h3>${video}</div>
+    <div class="step"><h3>2 · 소리 내어 세 번 읽기</h3>
+      <div class="dots" id="dots">${[1,2,3].map((n) => `<button class="dot" data-n="${n}" type="button" aria-label="${n}번째 읽기">${n}</button>`).join('')}
+        <span style="font-size:13px;color:var(--soft);margin-left:4px">한 번 읽을 때마다 눌러요</span></div>
+    </div>
+    <div class="step"><h3>3 · 녹음해서 내기</h3><div id="recArea"></div></div>
+    ${mine.length ? `<div class="step"><h3>내 녹음</h3><div class="hist" id="hist"></div></div>` : ''}
+  `);
+  $('xBtn').onclick = closeSheet;
+  $('dots').querySelectorAll('.dot').forEach((d) => d.onclick = () => {
+    R.reads = +d.dataset.n;
+    $('dots').querySelectorAll('.dot').forEach((x) => x.classList.toggle('on', +x.dataset.n <= R.reads));
+  });
+  renderRec('idle');
+  if (mine.length) renderHist(mine);
+}
+
+function renderRec(state) {
+  const a = $('recArea'); if (!a) return;
+  if (state === 'idle') {
+    a.innerHTML = `<div class="recbox"><button class="recbtn" id="recBtn" type="button" aria-label="녹음 시작">${micIcon('#121C33', 38)}</button>
+      <div style="font-weight:700">눌러서 녹음 시작</div><div style="font-size:12.5px;color:var(--soft)">책 한 권을 처음부터 끝까지 읽어요</div></div>`;
+    $('recBtn').onclick = startRecording;
+  } else if (state === 'rec') {
+    a.innerHTML = `<div class="recbox"><button class="recbtn on" id="recBtn" type="button" aria-label="녹음 멈추기">${micIcon('#121C33', 38)}</button>
+      <div class="timer" id="timer">0:00</div><div style="font-weight:700">녹음 중… 다 읽으면 한 번 더 눌러요</div></div>`;
+    $('recBtn').onclick = () => stopRecording(false);
+  } else if (state === 'review') {
+    a.innerHTML = `<div class="recbox"><audio controls src="${URL.createObjectURL(R.blob)}"></audio>
+      <div class="grid2"><button class="btn line" id="againBtn" type="button">다시 녹음</button><button class="btn orange" id="sendBtn" type="button">선생님께 내기</button></div></div>`;
+    $('againBtn').onclick = () => { R.blob = null; renderRec('idle'); };
+    $('sendBtn').onclick = submitRecording;
+  } else if (state === 'sending') {
+    a.innerHTML = `<div class="recbox"><div style="font-weight:700">보내는 중… 잠깐만 기다려요</div></div>`;
+  } else if (state === 'done') {
+    a.innerHTML = `<div class="done"><div class="big">📚</div><div style="font-weight:700;font-size:17px">책꽂이에 꽂혔어요!</div>
+      <div style="font-size:13px;color:var(--soft);margin-top:4px">선생님이 듣고 피드백을 남겨 줄 거예요</div>
+      <button class="btn primary" style="margin-top:14px;width:100%" id="okBtn" type="button">책꽂이 보러 가기</button></div>`;
+    $('okBtn').onclick = closeSheet;
+  }
+}
+
+async function startRecording() {
+  if (!navigator.mediaDevices || !window.MediaRecorder) { toast('이 브라우저에서는 녹음이 안 돼요. 크롬이나 사파리로 열어 주세요.'); return; }
+  try { R.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch (e) { toast('마이크를 허용해 주세요. 주소창 옆 설정에서 마이크를 켜요.'); return; }
+  const types = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus'];
+  R.mime = types.find((t) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+  R.chunks = [];
+  R.rec = new MediaRecorder(R.stream, R.mime ? { mimeType: R.mime, audioBitsPerSecond: 48000 } : undefined);
+  R.rec.ondataavailable = (e) => { if (e.data && e.data.size) R.chunks.push(e.data); };
+  R.rec.onstop = () => {
+    R.stream.getTracks().forEach((t) => t.stop());
+    if (R.discard) { R.discard = false; return; }
+    R.blob = new Blob(R.chunks, { type: R.rec.mimeType || R.mime || 'audio/webm' });
+    renderRec('review');
+  };
+  R.rec.start(1000); R.start = Date.now();
+  renderRec('rec');
+  R.tick = setInterval(() => {
+    const s = Math.floor((Date.now() - R.start) / 1000);
+    const el = $('timer'); if (el) el.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    if (s >= 600) stopRecording(false);
+  }, 500);
+}
+function stopRecording(discard) {
+  clearInterval(R.tick);
+  if (R.rec && R.rec.state !== 'inactive') { R.discard = !!discard; R.duration = Math.round((Date.now() - R.start) / 1000); R.rec.stop(); }
+}
+async function submitRecording() {
+  if (!R.blob || !R.book) return;
+  if (R.blob.size < 2000) { toast('녹음이 너무 짧아요. 다시 녹음해 주세요.'); return; }
+  renderRec('sending');
+  const type = R.blob.type || 'audio/webm';
+  const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+  const path = `${S.user.id}/${R.book.id}/${Date.now()}.${ext}`;
+  const up = await sb.storage.from('recordings').upload(path, R.blob, { contentType: type, upsert: false });
+  if (up.error) { toast('보내기에 실패했어요. 인터넷 연결을 확인하고 다시 눌러요.'); renderRec('review'); return; }
+  const { data, error } = await sb.from('rr_submissions').insert({ student_id: S.user.id, book_id: R.book.id, audio_path: path, duration_sec: R.duration || null }).select().single();
+  if (error) { toast('저장에 실패했어요. 다시 눌러 주세요.'); renderRec('review'); return; }
+  S.subs.unshift(data);
+  renderRec('done');
+  renderStudent();
+}
+async function renderHist(list) {
+  const box = $('hist'); if (!box) return;
+  box.innerHTML = list.map((x) => `<div class="item"><div style="font-size:13px;color:var(--soft)">${fmtDate(x.created_at)} 녹음</div>
+    <audio controls preload="none" data-path="${esc(x.audio_path)}"></audio>
+    ${x.feedback ? `<div class="fb"><b>선생님:</b> ${esc(x.feedback)}</div>` : `<div style="font-size:12.5px;color:var(--soft);margin-top:6px">선생님이 아직 듣는 중이에요</div>`}</div>`).join('');
+  await attachAudio(box);
+}
+async function attachAudio(root) {
+  const els = [...root.querySelectorAll('audio[data-path]')].filter((a) => a.dataset.path);
+  if (!els.length) return;
+  const { data } = await sb.storage.from('recordings').createSignedUrls(els.map((a) => a.dataset.path), 3600);
+  (data || []).forEach((d, i) => { if (d && d.signedUrl) els[i].src = d.signedUrl; });
+}
+
+// ───────── 선생님 화면 ─────────
+let T = { students: [], subs: [], filter: 'pending' };
+document.querySelectorAll('.ttab[data-t]').forEach((b) => b.onclick = () => teacherTab(b.dataset.t));
+async function teacherTab(t) {
+  document.querySelectorAll('.ttab[data-t]').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+  $('tPending').classList.toggle('hidden', t !== 'pending');
+  $('tStudents').classList.toggle('hidden', t !== 'students');
+  $('tAdd').classList.toggle('hidden', t !== 'add');
+  await loadTeacherData();
+  if (t === 'pending') renderPending();
+  if (t === 'students') renderStudents();
+  if (t === 'add') renderAdd();
+}
+async function loadTeacherData() {
+  const [st, su] = await Promise.all([
+    sb.from('rr_students').select('*').order('class_name').order('name'),
+    sb.from('rr_submissions').select('id,student_id,book_id,audio_path,duration_sec,created_at,feedback,feedback_at').order('created_at', { ascending: false }).limit(500),
+  ]);
+  T.students = st.data || []; T.subs = su.data || [];
+  $('pendCount').textContent = T.subs.filter((x) => !x.feedback).length;
+}
+const stuName = (id) => (T.students.find((s) => s.user_id === id) || {}).name || '(삭제된 학생)';
+
+function renderPending() {
+  const list = T.subs.filter((x) => T.filter === 'all' || !x.feedback).slice(0, 80);
+  $('tPending').innerHTML = `
+    <div class="trow" style="margin-top:18px;align-items:center">
+      <b style="font-size:18px;margin-right:auto">${T.filter === 'all' ? '모든 녹음' : '피드백을 기다리는 녹음'}</b>
+      <button class="tbtn ${T.filter === 'pending' ? 'dark' : ''}" data-f="pending" type="button">기다리는 것만</button>
+      <button class="tbtn ${T.filter === 'all' ? 'dark' : ''}" data-f="all" type="button">전체</button>
+    </div>
+    <div class="tlist">${list.length ? list.map((x) => {
+      const b = bookById(x.book_id) || { title: '' };
+      return `<div class="tcard" data-id="${x.id}">
+        <div class="tmeta"><b>${esc(stuName(x.student_id))}</b><span>ORT ${esc(x.book_id)} ${esc(b.title)}</span><span>${fmtDate(x.created_at)}</span>${x.duration_sec ? `<span>${Math.floor(x.duration_sec/60)}분 ${x.duration_sec%60}초</span>` : ''}${x.feedback ? '<span class="tag ok">피드백 완료</span>' : '<span class="tag wait">기다리는 중</span>'}</div>
+        <audio controls preload="none" style="margin-top:10px" data-path="${esc(x.audio_path)}"></audio>
+        <label for="fb-${x.id}" style="color:var(--muted)">텍스트 피드백</label>
+        <textarea class="tarea" id="fb-${x.id}" placeholder="예) 끝까지 또박또박 잘 읽었어요! th 소리만 혀를 살짝 내밀고 다시 연습해 봐요.">${esc(x.feedback || '')}</textarea>
+        <div class="trow"><button class="tbtn orange" data-save="${x.id}" type="button">피드백 보내기</button></div>
+      </div>`;
+    }).join('') : `<div class="empty">새로 들어온 녹음이 없어요 ☕</div>`}</div>`;
+  $('tPending').querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { T.filter = b.dataset.f; renderPending(); });
+  $('tPending').querySelectorAll('[data-save]').forEach((b) => b.onclick = () => saveFeedback(b.dataset.save));
+  attachAudio($('tPending'));
+}
+async function saveFeedback(id) {
+  const txt = $('fb-' + id).value.trim();
+  if (!txt) { toast('피드백을 한 줄 적어 주세요.'); return; }
+  const { error } = await sb.from('rr_submissions').update({ feedback: txt, feedback_at: new Date().toISOString() }).eq('id', id);
+  if (error) { toast('저장 실패: ' + error.message); return; }
+  toast('피드백을 보냈어요'); await loadTeacherData(); renderPending();
+}
+
+function renderStudents() {
+  const levelCount = (lv) => S.books.filter((b) => b.level === lv).length;
+  const rows = T.students.map((s) => {
+    const mine = T.subs.filter((x) => x.student_id === s.user_id);
+    const readIds = new Set(mine.map((x) => x.book_id));
+    const inLevel = S.books.filter((b) => b.level === s.level && readIds.has(b.id)).length;
+    const total = levelCount(s.level);
+    const clear = total && inLevel >= total;
+    const last = mine[0];
+    return `<tr>
+      <td><b>${esc(s.name)}</b><div style="font-size:12px;color:var(--muted)">${esc(s.class_name)}</div></td>
+      <td>${esc(s.login_id)}</td>
+      <td style="font-variant-numeric:tabular-nums">${esc(s.pin)}</td>
+      <td><select class="tinput" style="min-height:38px;width:auto" data-lv="${s.user_id}">${LEVELS.map((l) => `<option value="${l}" ${l === s.level ? 'selected' : ''}>Level ${l}</option>`).join('')}</select></td>
+      <td>${inLevel} / ${total}권 ${clear ? '<span class="tag gift">완독! 선물 준비</span>' : ''}</td>
+      <td>${last ? fmtDate(last.created_at) + '<div style="font-size:12px;color:var(--muted)">ORT ' + esc(last.book_id) + '</div>' : '<span style="color:var(--muted)">아직 없음</span>'}</td>
+      <td>${s.last_login_at ? fmtDate(s.last_login_at) : '<span style="color:var(--muted)">-</span>'}</td>
+      <td><div class="trow" style="margin:0"><button class="tbtn" data-copy="${s.user_id}" type="button">안내문</button><button class="tbtn" data-pin="${s.user_id}" type="button">비번 바꾸기</button></div></td>
+    </tr>`;
+  }).join('');
+  $('tStudents').innerHTML = T.students.length ? `
+    <div class="tablebox"><table>
+      <thead><tr><th>학생</th><th>아이디</th><th>비밀번호</th><th>레벨</th><th>레벨 진도</th><th>마지막 녹음</th><th>마지막 접속</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <div id="copyOut"></div>` : `<div class="empty">아직 학생이 없어요. "학생 추가"에서 만들어 주세요.</div>`;
+  $('tStudents').querySelectorAll('[data-lv]').forEach((sel) => sel.onchange = async () => {
+    const { error } = await sb.from('rr_students').update({ level: +sel.value }).eq('user_id', sel.dataset.lv);
+    toast(error ? '변경 실패: ' + error.message : '레벨을 바꿨어요'); await loadTeacherData(); renderStudents();
+  });
+  $('tStudents').querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => showGuide(T.students.find((s) => s.user_id === b.dataset.copy)));
+  $('tStudents').querySelectorAll('[data-pin]').forEach((b) => b.onclick = async () => {
+    const s = T.students.find((x) => x.user_id === b.dataset.pin);
+    const pin = makePin();
+    if (!confirmInline(b, `${s.name} 비밀번호를 ${pin}(으)로 바꿀까요?`)) return;
+    const { error } = await sb.rpc('rr_reset_pin', { p_student: s.user_id, p_pin: pin });
+    if (error) { toast('변경 실패: ' + error.message); return; }
+    toast(`새 비밀번호: ${pin}`); await loadTeacherData(); renderStudents();
+    showGuide(T.students.find((x) => x.user_id === s.user_id));
+  });
+}
+// 두 번 누르면 실행 (브라우저 확인창 대신)
+function confirmInline(btn, msg) {
+  if (btn.dataset.armed === '1') { btn.dataset.armed = ''; return true; }
+  btn.dataset.armed = '1'; const old = btn.textContent; btn.textContent = '한 번 더 누르면 변경'; toast(msg);
+  setTimeout(() => { btn.dataset.armed = ''; btn.textContent = old; }, 4000);
+  return false;
+}
+function guideText(s) {
+  return `[빅애플 Reading Roots 안내]\n${s.name} 학생의 다독 낭독 계정이에요.\n\n주소: ${APP_URL}\n아이디: ${s.login_id}\n비밀번호: ${s.pin}\n\n휴대폰에서 주소를 열고 '홈 화면에 추가'를 해두시면 앱처럼 쓸 수 있어요.\n책을 보고 듣고, 세 번 소리 내어 읽은 뒤 녹음해서 내면 책꽂이에 책이 꽂혀요.`;
+}
+function showGuide(s) {
+  const out = $('copyOut'); if (!out || !s) return;
+  out.innerHTML = `<div class="copybox" id="guideTxt">${esc(guideText(s))}</div><div class="trow"><button class="tbtn dark" id="copyBtn" type="button">안내문 복사</button></div>`;
+  $('copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(guideText(s)); toast('복사했어요. 카톡에 붙여넣기 하세요'); } catch { toast('복사가 안 되면 글을 길게 눌러 복사해 주세요'); } };
+  out.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function makePin() {
+  const bad = /^(\d)\1{3}$|1234|2345|3456|4567|5678|6789|0123|9876|8765|7654|6543|5432|4321|3210/;
+  const used = new Set(T.students.map((s) => s.pin));
+  for (let i = 0; i < 200; i++) {
+    const p = String(crypto.getRandomValues(new Uint16Array(1))[0] % 10000).padStart(4, '0');
+    if (!bad.test(p) && !/^(19|20)\d\d$/.test(p) && !used.has(p)) return p;
+  }
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function renderAdd() {
+  const pin = makePin();
+  $('tAdd').innerHTML = `
+    <div class="tcard" style="margin-top:18px">
+      <b style="font-size:18px">새 학생 만들기</b>
+      <p style="margin:6px 0 0;color:var(--muted);font-size:13.5px">아이디는 영어 소문자·숫자로 만들어요 (예: jiho, ort2-jiho). 비밀번호 4자리는 자동으로 만들어져요.</p>
+      <div class="form">
+        <div><label for="aName">이름</label><input class="tinput" id="aName" placeholder="김지호"></div>
+        <div><label for="aClass">반</label><input class="tinput" id="aClass" placeholder="월수금 파닉스 리딩반"></div>
+        <div><label for="aLogin">아이디</label><input class="tinput" id="aLogin" autocapitalize="none" placeholder="jiho"></div>
+        <div><label for="aLevel">ORT 레벨</label><select class="tinput" id="aLevel">${LEVELS.map((l) => `<option value="${l}">Level ${l}</option>`).join('')}</select></div>
+        <div><label for="aPin">비밀번호 (숫자 4자리)</label><input class="tinput" id="aPin" inputmode="numeric" maxlength="4" value="${pin}"></div>
+      </div>
+      <p id="aErr" class="err" style="color:#B3261E"></p>
+      <div class="trow"><button class="tbtn orange" id="aBtn" type="button">학생 만들기</button><button class="tbtn" id="aNewPin" type="button">비밀번호 다시 만들기</button></div>
+    </div>
+    <div id="copyOut"></div>`;
+  $('aNewPin').onclick = () => { $('aPin').value = makePin(); };
+  $('aBtn').onclick = addStudent;
+}
+async function addStudent() {
+  const name = $('aName').value.trim(), cls = $('aClass').value.trim();
+  const login = $('aLogin').value.trim().toLowerCase(), pin = $('aPin').value.trim(), level = +$('aLevel').value;
+  $('aErr').textContent = '';
+  if (!name) return ($('aErr').textContent = '이름을 적어 주세요.');
+  if (!/^[a-z0-9][a-z0-9_-]{2,19}$/.test(login)) return ($('aErr').textContent = '아이디는 영어 소문자·숫자 3~20자로 만들어 주세요.');
+  if (!/^[0-9]{4}$/.test(pin)) return ($('aErr').textContent = '비밀번호는 숫자 4자리예요.');
+  if (T.students.some((s) => s.login_id === login)) return ($('aErr').textContent = '이미 있는 아이디예요. 다른 아이디로 해 주세요.');
+  $('aBtn').disabled = true; $('aBtn').textContent = '만드는 중…';
+  // 선생님 로그인을 유지한 채로 학생 계정을 만들기 위해 별도 연결을 씀
+  const side = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'rr-side' } });
+  const { data, error } = await side.auth.signUp({ email: emailFor(login), password: pwFor(pin) });
+  if (error || !data.user) {
+    $('aBtn').disabled = false; $('aBtn').textContent = '학생 만들기';
+    $('aErr').textContent = /registered|exists/i.test(error?.message || '') ? '이미 쓰고 있는 아이디예요. 다른 아이디로 해 주세요.' : '계정을 만들지 못했어요: ' + (error?.message || '알 수 없는 오류');
+    return;
+  }
+  const row = { user_id: data.user.id, login_id: login, name, class_name: cls, level, pin };
+  const ins = await sb.from('rr_students').insert(row);
+  $('aBtn').disabled = false; $('aBtn').textContent = '학생 만들기';
+  if (ins.error) { $('aErr').textContent = '학생 정보 저장 실패: ' + ins.error.message; return; }
+  toast(`${name} 학생을 만들었어요`);
+  await loadTeacherData();
+  renderAdd();
+  showGuide(row);
+}
+
+// ───────── 시작 ─────────
+sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') show('scrLogin'); });
+route();
+</script>
+</body>
+</html>
