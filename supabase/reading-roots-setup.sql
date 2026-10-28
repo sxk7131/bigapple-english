@@ -293,3 +293,13 @@ insert into public.rr_books (id, series, level, num, title, video_drive_id) valu
   ('3-36', 'ORT', 3, 36, 'Road Burner', null)
 on conflict (id) do update set title = excluded.title;
 
+
+-- 10) 녹음 지우기: 학생은 피드백 전 자기 녹음만, 선생님은 모두 ------------
+drop policy if exists "student deletes own unreviewed submission" on public.rr_submissions;
+create policy "student deletes own unreviewed submission" on public.rr_submissions
+  for delete to authenticated using (student_id = auth.uid() and feedback is null);
+
+drop policy if exists "rr student deletes own recordings" on storage.objects;
+create policy "rr student deletes own recordings" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'recordings' and (storage.foldername(name))[1] = auth.uid()::text and public.rr_is_student());

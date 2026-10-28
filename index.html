@@ -425,8 +425,9 @@ function renderRec(state) {
   } else if (state === 'done') {
     a.innerHTML = `<div class="done"><div class="big">📚</div><div style="font-weight:700;font-size:17px">책꽂이에 꽂혔어요!</div>
       <div style="font-size:13px;color:var(--soft);margin-top:4px">선생님이 듣고 피드백을 남겨 줄 거예요</div>
-      <button class="btn primary" style="margin-top:14px;width:100%" id="okBtn" type="button">책꽂이 보러 가기</button></div>`;
+      <div class="grid2" style="margin-top:14px"><button class="btn line" id="redoBtn" type="button">다시 녹음하기</button><button class="btn primary" id="okBtn" type="button">책꽂이 보러 가기</button></div></div>`;
     $('okBtn').onclick = closeSheet;
+    $('redoBtn').onclick = () => openBook(R.book.id);
   }
 }
 
@@ -476,8 +477,22 @@ async function renderHist(list) {
   const box = $('hist'); if (!box) return;
   box.innerHTML = list.map((x) => `<div class="item"><div style="font-size:13px;color:var(--soft)">${fmtDate(x.created_at)} 녹음</div>
     <audio controls preload="none" data-path="${esc(x.audio_path)}"></audio>
-    ${x.feedback ? `<div class="fb"><b>선생님:</b> ${esc(x.feedback)}</div>` : `<div style="font-size:12.5px;color:var(--soft);margin-top:6px">선생님이 아직 듣는 중이에요</div>`}</div>`).join('');
+    ${x.feedback ? `<div class="fb"><b>선생님:</b> ${esc(x.feedback)}</div>` : `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px"><span style="font-size:12.5px;color:var(--soft)">선생님이 아직 듣는 중이에요</span><button class="ghost" data-del="${x.id}" type="button">이 녹음 지우기</button></div>`}</div>`).join('');
+  box.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+    if (!confirmInline(b, '지운 녹음은 되돌릴 수 없어요')) return;
+    const sub = S.subs.find((s) => s.id === b.dataset.del); if (!sub) return;
+    if (!(await deleteSubmission(sub))) return;
+    S.subs = S.subs.filter((s) => s.id !== sub.id);
+    toast('녹음을 지웠어요'); renderStudent(); openBook(sub.book_id);
+  });
   await attachAudio(box);
+}
+// 녹음 파일과 기록을 함께 지움 (학생: 피드백 전 자기 녹음만, 선생님: 모두)
+async function deleteSubmission(sub) {
+  const { data, error } = await sb.from('rr_submissions').delete().eq('id', sub.id).select('id');
+  if (error || !data || !data.length) { toast('지울 수 없어요. 선생님 피드백이 달린 녹음은 지울 수 없어요.'); return false; }
+  if (sub.audio_path) await sb.storage.from('recordings').remove([sub.audio_path]);
+  return true;
 }
 async function attachAudio(root) {
   const els = [...root.querySelectorAll('audio[data-path]')].filter((a) => a.dataset.path);
@@ -524,11 +539,17 @@ function renderPending() {
         <audio controls preload="none" style="margin-top:10px" data-path="${esc(x.audio_path)}"></audio>
         <label for="fb-${x.id}" style="color:var(--muted)">텍스트 피드백</label>
         <textarea class="tarea" id="fb-${x.id}" placeholder="예) 끝까지 또박또박 잘 읽었어요! th 소리만 혀를 살짝 내밀고 다시 연습해 봐요.">${esc(x.feedback || '')}</textarea>
-        <div class="trow"><button class="tbtn orange" data-save="${x.id}" type="button">피드백 보내기</button></div>
+        <div class="trow"><button class="tbtn orange" data-save="${x.id}" type="button">피드백 보내기</button><button class="tbtn" data-tdel="${x.id}" type="button" style="margin-left:auto">녹음 삭제</button></div>
       </div>`;
     }).join('') : `<div class="empty">새로 들어온 녹음이 없어요 ☕</div>`}</div>`;
   $('tPending').querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { T.filter = b.dataset.f; renderPending(); });
   $('tPending').querySelectorAll('[data-save]').forEach((b) => b.onclick = () => saveFeedback(b.dataset.save));
+  $('tPending').querySelectorAll('[data-tdel]').forEach((b) => b.onclick = async () => {
+    if (!confirmInline(b, '지운 녹음은 되돌릴 수 없어요')) return;
+    const sub = T.subs.find((s) => s.id === b.dataset.tdel); if (!sub) return;
+    if (!(await deleteSubmission(sub))) return;
+    toast('녹음을 지웠어요'); await loadTeacherData(); renderPending();
+  });
   attachAudio($('tPending'));
 }
 async function saveFeedback(id) {
