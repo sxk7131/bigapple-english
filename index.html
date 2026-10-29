@@ -143,12 +143,12 @@ td{padding:12px;border-top:1px solid #EEE6D6;vertical-align:middle}
 
 /* 라이브러리 진열장 */
 .bookcase{background:var(--navy);border-radius:18px;padding:22px 18px 8px;margin-top:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
-.bookcase .brow{display:flex;gap:4px;align-items:flex-end;padding:0 6px}
+.bookcase .brow{display:flex;gap:3px;align-items:flex-end;padding:0 6px}
 .bookcase .board{margin-bottom:22px}
-.tspine{flex:0 0 auto;width:34px;border:0;padding:6px 0 8px;border-radius:3px 3px 2px 2px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;position:relative;box-shadow:inset 4px 0 0 rgba(0,0,0,.18),0 6px 10px rgba(0,0,0,.35);transition:transform .15s ease;overflow:hidden}
+.tspine{flex:0 0 auto;width:29px;border:0;padding:6px 0 8px;border-radius:3px 3px 2px 2px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;position:relative;box-shadow:inset 4px 0 0 rgba(0,0,0,.18),0 6px 10px rgba(0,0,0,.35);transition:transform .15s ease;overflow:hidden}
 .tspine:hover,.tspine:focus-visible{transform:translateY(-8px)}
-.tspine .no{font-size:10px;font-weight:800;color:#fff}
-.tspine .sttl{writing-mode:vertical-rl;font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:calc(100% - 40px);opacity:.95}
+.tspine .no{font-size:9.5px;letter-spacing:-.2px;font-weight:800;color:#fff}
+.tspine .sttl{writing-mode:vertical-rl;font-size:10.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:calc(100% - 40px);opacity:.95}
 .tspine.light .no,.tspine.light .sttl{color:var(--ink)}
 .tspine .rd{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);min-width:16px;height:16px;border-radius:999px;background:#fff;color:var(--ink);font-size:9.5px;font-weight:800;display:grid;place-items:center;padding:0 3px}
 .tspine.novid{outline:2px dashed #F6A6A0;outline-offset:-2px}
@@ -793,13 +793,13 @@ function renderShelfDetail() {
     <div class="bookcase" id="caseBox"></div>
     <div id="bookForm"></div>`;
   const box = $('caseBox');
-  const maxPer = Math.max(8, Math.floor((box.clientWidth - 48) / 38));
+  const maxPer = Math.max(8, Math.floor((box.clientWidth - 48 + 3) / 32));
   const items = books.map((b) => {
     const c = bookColor(b), n = readers[b.id] ? readers[b.id].size : 0, h = 128 + ((b.num * 7) % 17);
     return `<button type="button" class="tspine ${LIGHT[c] ? 'light' : ''} ${b.video_drive_id ? '' : 'novid'}" data-lb="${esc(b.id)}" style="height:${h}px;background:${c}" title="${esc(bookLabel(b))} ${esc(b.title)}${n ? ' · ' + n + '명 읽음' : ''}" aria-label="${esc(bookLabel(b))} ${esc(b.title)}"><span class="no">${esc(bookLabel(b))}</span><span class="sttl">${esc(b.title)}</span>${n ? `<span class="rd">${n}</span>` : ''}</button>`;
   });
   items.push('<button type="button" class="tspine add" id="addBookBtn" style="height:128px" title="책 추가" aria-label="책 추가">+</button>');
-  const per = Math.ceil(items.length / Math.ceil(items.length / maxPer));
+  const per = maxPer;
   let html = '';
   for (let i = 0; i < items.length; i += per) html += `<div class="brow">${items.slice(i, i + per).join('')}</div><div class="board" aria-hidden="true"></div>`;
   box.innerHTML = html;
