@@ -140,6 +140,31 @@ td{padding:12px;border-top:1px solid #EEE6D6;vertical-align:middle}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--cream);color:var(--ink);padding:12px 18px;border-radius:12px;font-weight:700;font-size:14px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:90vw;text-align:center}
 .empty{color:var(--muted);text-align:center;padding:30px 10px}
 @media (max-width:380px){h1.title{font-size:30px}}
+
+/* 라이브러리 진열장 */
+.libpager{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:18px}
+.libpager .pg{border:1px solid var(--sand);background:#fff;color:var(--ink);border-radius:999px;padding:8px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.libpager .pg.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.libpager .arrow{width:38px;height:38px;padding:0;display:grid;place-items:center;font-size:18px}
+.libpager .arrow:disabled{opacity:.35;cursor:default}
+.display{display:grid;grid-template-columns:repeat(3,1fr);gap:34px 28px;margin:26px 0 10px}
+@media (max-width:720px){.display{grid-template-columns:repeat(2,1fr);gap:28px 16px}}
+.dslot{background:none;border:0;padding:0;font:inherit;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;text-align:center}
+.dslot .cover{width:min(150px,80%);aspect-ratio:3/4;border-radius:4px 8px 8px 4px;position:relative;overflow:hidden;box-shadow:inset 6px 0 0 rgba(0,0,0,.12),0 10px 18px -8px rgba(18,28,51,.45);transition:transform .2s ease;z-index:1}
+.dslot:hover .cover,.dslot:focus-visible .cover{transform:translateY(-6px)}
+.cover .ser{position:absolute;left:12px;top:10px;font-family:'Playfair Display',Georgia,serif;font-size:12px;font-weight:600;line-height:1.15;text-align:left;max-width:62%}
+.cover .lv{position:absolute;right:8px;top:8px;min-width:30px;height:38px;border-radius:5px;background:rgba(255,255,255,.92);color:var(--ink);display:grid;place-items:center;font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;padding:0 4px}
+.cover .lv small{display:block;font-family:'Noto Sans KR',sans-serif;font-size:7px;letter-spacing:.08em;font-weight:700;margin-bottom:-6px}
+.cover .mosaic{position:absolute;left:10px;right:10px;top:54px;bottom:24px;display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.cover .mosaic span{border-radius:4px;background:rgba(255,255,255,.28);background-size:cover;background-position:center}
+.cover .foot{position:absolute;left:10px;right:10px;bottom:7px;white-space:nowrap;overflow:hidden;font-size:9px;font-weight:700;letter-spacing:.06em;opacity:.85;text-align:left}
+.dslot .ledge{width:92%;height:14px;margin-top:-4px;border-radius:2px;background:linear-gradient(#FFFFFF,#E9E9EE);box-shadow:0 14px 16px -10px rgba(18,28,51,.45)}
+.dslot .name{margin-top:14px;font-size:16px;font-weight:700}
+.dslot .meta{margin-top:3px;font-size:12.5px;color:var(--muted)}
+.dslot.empty .cover{background:repeating-linear-gradient(135deg,#F3EEE4 0 10px,#EDE6D8 10px 20px)!important;box-shadow:inset 0 0 0 2px #D9CBB0}
+.dslot.empty .cover .ser,.dslot.empty .cover .lv{opacity:.55}
+.dslot.empty .cover .plus{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--muted)}
+.dslot.empty .name{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -572,7 +597,7 @@ async function teacherTab(t) {
   Object.entries(TABS).forEach(([k, id]) => $(id).classList.toggle('hidden', k !== t));
   await loadTeacherData();
   if (t === 'pending') renderPending();
-  if (t === 'library') renderLibrary();
+  if (t === 'library') { T.libShelf = null; renderLibrary(); }
   if (t === 'students') renderStudents();
   if (t === 'add') renderAdd();
 }
@@ -677,21 +702,80 @@ function driveId(v) {
   return /^[A-Za-z0-9_-]{20,}$/.test(t) ? t : null;
 }
 function slug(t) { return String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+// 라이브러리 첫 화면: 시리즈마다 한 장, 레벨을 진열장처럼
+const SERIES_SLOTS = { ORT: 9 };          // ORT는 1~9단계를 항상 보여줌
+const COVER_COLORS = ['#F4D35E', '#8FD3C1', '#9CC9F0', '#F6A6A0', '#C7B3F0', '#F7B977', '#A9D98B', '#F2A7CF', '#B9C3D8'];
+function seriesList() {
+  const m = {};
+  S.shelves.forEach((x) => { if (!(x.series in m) || x.sort < m[x.series]) m[x.series] = x.sort; });
+  if (!('ORT' in m)) m.ORT = -1;
+  return Object.keys(m).sort((a, b) => m[a] - m[b]);
+}
+function thumb(id) { return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w240`; }
+function coverHtml(series, level, sh) {
+  const c = COVER_COLORS[(Math.max(level, 1) - 1) % COVER_COLORS.length];
+  const pics = sh ? booksOf(sh.id).filter((b) => b.video_drive_id).slice(0, 4) : [];
+  const cells = [0, 1, 2, 3].map((i) => pics[i] ? `<span style="background-image:url('${thumb(pics[i].video_drive_id)}')"></span>` : '<span></span>').join('');
+  const serName = series === 'ORT' ? 'Oxford<br>Reading Tree' : esc(series);
+  return `<span class="cover" style="background:${c}">
+    <span class="ser">${serName}</span>
+    <span class="lv"><span><small>LEVEL</small>${level}</span></span>
+    <span class="mosaic">${cells}</span>
+    <span class="foot">READING ROOTS</span>
+  </span>`;
+}
 function renderLibrary() {
-  if (!T.libShelf || !shelfById(T.libShelf)) T.libShelf = S.shelves[0] ? S.shelves[0].id : null;
-  const sh = shelfById(T.libShelf);
-  const readers = {};
-  T.subs.forEach((x) => { (readers[x.book_id] = readers[x.book_id] || new Set()).add(x.student_id); });
-  const books = sh ? booksOf(sh.id) : [];
-  const assigned = sh ? T.students.filter((s) => s.shelf_id === sh.id).length : 0;
+  if (T.libShelf && shelfById(T.libShelf)) return renderShelfDetail();
+  T.libShelf = null;
+  const list = seriesList();
+  if (!T.libSeries || !list.includes(T.libSeries)) T.libSeries = list[0];
+  const idx = list.indexOf(T.libSeries), series = T.libSeries;
+  const shelves = S.shelves.filter((x) => x.series === series);
+  const maxLv = Math.max(SERIES_SLOTS[series] || 0, ...shelves.map((x) => x.level));
+  const levels = SERIES_SLOTS[series] ? Array.from({ length: maxLv }, (_, i) => i + 1) : shelves.map((x) => x.level).sort((a, b) => a - b);
+  const slots = levels.map((lv) => {
+    const sh = shelves.find((x) => x.level === lv);
+    if (!sh) return `<button type="button" class="dslot empty" data-make="${lv}">${coverHtml(series, lv, null).replace('</span>\n  </span>', '</span><span class="plus">+ 책장 만들기</span>\n  </span>')}<span class="ledge"></span><span class="name">${esc(series)} Level ${lv}</span><span class="meta">아직 비어 있어요</span></button>`;
+    const n = booksOf(sh.id).length, kids = T.students.filter((s) => s.shelf_id === sh.id).length;
+    return `<button type="button" class="dslot" data-lib="${esc(sh.id)}">${coverHtml(series, lv, sh)}<span class="ledge"></span><span class="name">${esc(sh.title)}</span><span class="meta">${n}권 · 아이 ${kids}명</span></button>`;
+  }).join('');
   $('tLibrary').innerHTML = `
     <div class="trow" style="margin-top:18px;align-items:center">
       <b style="font-size:18px;margin-right:auto">라이브러리</b>
-      ${S.shelves.map((x) => `<button class="tbtn ${x.id === T.libShelf ? 'dark' : ''}" data-lib="${esc(x.id)}" type="button">${esc(x.title)} · ${booksOf(x.id).length}권</button>`).join('')}
-      <button class="tbtn orange" id="newShelfBtn" type="button">+ 새 책장</button>
+      <button class="tbtn orange" id="newShelfBtn" type="button">+ 새 시리즈·책장</button>
+    </div>
+    <div class="libpager">
+      <button class="pg arrow" id="pgPrev" type="button" aria-label="이전 장" ${idx <= 0 ? 'disabled' : ''}>‹</button>
+      ${list.map((x) => `<button class="pg ${x === series ? 'on' : ''}" data-series="${esc(x)}" type="button">${esc(x)}</button>`).join('')}
+      <button class="pg arrow" id="pgNext" type="button" aria-label="다음 장" ${idx >= list.length - 1 ? 'disabled' : ''}>›</button>
+      <span style="margin-left:auto;font-size:13px;color:var(--muted)">${idx + 1} / ${list.length}장</span>
     </div>
     <div id="shelfForm"></div>
-    ${sh ? `<p style="margin:10px 2px 0;color:var(--muted);font-size:13.5px">${esc(sh.title)} · ${books.length}권 · 영상 연결 ${books.filter((b) => b.video_drive_id).length}권 · 배정된 아이 ${assigned}명 · 녹음 ${sh.batch_size}권마다 피드백</p>
+    <div class="display">${slots || '<div class="empty">아직 책장이 없어요.</div>'}</div>`;
+  const go = (sr) => { T.libSeries = sr; renderLibrary(); };
+  $('tLibrary').querySelectorAll('[data-series]').forEach((b) => b.onclick = () => go(b.dataset.series));
+  $('pgPrev').onclick = () => idx > 0 && go(list[idx - 1]);
+  $('pgNext').onclick = () => idx < list.length - 1 && go(list[idx + 1]);
+  $('tLibrary').querySelectorAll('[data-lib]').forEach((b) => b.onclick = () => { T.libShelf = b.dataset.lib; renderLibrary(); window.scrollTo(0, 0); });
+  $('tLibrary').querySelectorAll('[data-make]').forEach((b) => b.onclick = () => shelfFormOpen(series, +b.dataset.make));
+  $('newShelfBtn').onclick = () => shelfFormOpen();
+  $('tLibrary').querySelectorAll('.mosaic span[style]').forEach((el) => {
+    const url = el.style.backgroundImage.slice(5, -2), im = new Image();
+    im.onerror = () => { el.style.backgroundImage = ''; }; im.src = url;
+  });
+}
+function renderShelfDetail() {
+  const sh = shelfById(T.libShelf);
+  const readers = {};
+  T.subs.forEach((x) => { (readers[x.book_id] = readers[x.book_id] || new Set()).add(x.student_id); });
+  const books = booksOf(sh.id);
+  const assigned = T.students.filter((s) => s.shelf_id === sh.id).length;
+  $('tLibrary').innerHTML = `
+    <div class="trow" style="margin-top:18px;align-items:center">
+      <button class="tbtn" id="libBack" type="button">‹ 라이브러리</button>
+      <b style="font-size:18px;margin-right:auto">${esc(sh.title)}</b>
+    </div>
+    <p style="margin:10px 2px 0;color:var(--muted);font-size:13.5px">${books.length}권 · 영상 연결 ${books.filter((b) => b.video_drive_id).length}권 · 배정된 아이 ${assigned}명 · 녹음 ${sh.batch_size}권마다 피드백</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:16px">
       ${books.map((b) => {
         const c = bookColor(b), n = readers[b.id] ? readers[b.id].size : 0;
@@ -706,23 +790,23 @@ function renderLibrary() {
       }).join('')}
       <button type="button" id="addBookBtn" style="border:2px dashed #D9CBB0;background:transparent;border-radius:14px;min-height:96px;font-weight:700;color:var(--muted)">+ 책 추가</button>
     </div>
-    <div id="bookForm"></div>` : `<div class="empty">아직 책장이 없어요. "+ 새 책장"으로 만들어 주세요.</div>`}`;
-  $('tLibrary').querySelectorAll('[data-lib]').forEach((b) => b.onclick = () => { T.libShelf = b.dataset.lib; renderLibrary(); });
+    <div id="bookForm"></div>`;
+  $('libBack').onclick = () => { T.libSeries = sh.series; T.libShelf = null; renderLibrary(); };
   $('tLibrary').querySelectorAll('[data-lb]').forEach((b) => b.onclick = () => openLibraryBook(b.dataset.lb));
-  $('newShelfBtn').onclick = shelfFormOpen;
-  if ($('addBookBtn')) $('addBookBtn').onclick = () => bookFormOpen(sh);
+  $('addBookBtn').onclick = () => bookFormOpen(sh);
 }
-function shelfFormOpen() {
+function shelfFormOpen(preSeries, preLevel) {
   $('shelfForm').innerHTML = `<div class="tcard" style="margin-top:14px">
     <b style="font-size:16px">새 책장 만들기</b>
     <p style="margin:6px 0 0;color:var(--muted);font-size:13.5px">예) 시리즈 "Reading Roots", 레벨 1 → "Reading Roots Level 1" 책장이 생겨요.</p>
     <div class="form">
-      <div><label for="nsSeries">시리즈 이름</label><input class="tinput" id="nsSeries" placeholder="Reading Roots"></div>
-      <div><label for="nsLevel">레벨 (숫자)</label><input class="tinput" id="nsLevel" inputmode="numeric" placeholder="1"></div>
-      <div><label for="nsBatch">피드백 묶음</label><select class="tinput" id="nsBatch"><option value="10">녹음 10권마다</option><option value="5">녹음 5권마다</option></select></div>
+      <div><label for="nsSeries">시리즈 이름</label><input class="tinput" id="nsSeries" placeholder="Reading Roots" value="${esc(preSeries || '')}"></div>
+      <div><label for="nsLevel">레벨 (숫자)</label><input class="tinput" id="nsLevel" inputmode="numeric" placeholder="1" value="${preLevel || ''}"></div>
+      <div><label for="nsBatch">피드백 묶음</label><select class="tinput" id="nsBatch"><option value="10">녹음 10권마다</option><option value="5" ${preLevel >= 4 ? 'selected' : ''}>녹음 5권마다</option></select></div>
     </div>
     <p id="nsErr" class="err" style="color:#B3261E"></p>
     <div class="trow"><button class="tbtn orange" id="nsSave" type="button">책장 만들기</button></div></div>`;
+  $('shelfForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
   $('nsSave').onclick = async () => {
     const series = $('nsSeries').value.trim(), level = parseInt($('nsLevel').value, 10), batch = +$('nsBatch').value;
     if (!series || !(level >= 0)) { $('nsErr').textContent = '시리즈 이름과 레벨 숫자를 적어 주세요.'; return; }
@@ -730,7 +814,7 @@ function shelfFormOpen() {
     const sort = (S.shelves.reduce((m, x) => Math.max(m, x.sort || 0), 0)) + 10;
     const { error } = await sb.from('rr_shelves').insert({ id, title: `${series} Level ${level}`, series, level, batch_size: batch, sort });
     if (error) { $('nsErr').textContent = /duplicate|unique/i.test(error.message) ? '이미 같은 시리즈·레벨 책장이 있어요.' : '만들지 못했어요: ' + error.message; return; }
-    await loadBooks(true); T.libShelf = id; toast('책장을 만들었어요'); renderLibrary();
+    await loadBooks(true); T.libShelf = id; T.libSeries = series; toast('책장을 만들었어요'); renderLibrary();
   };
 }
 function bookFormOpen(sh) {
