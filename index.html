@@ -186,6 +186,7 @@ td{padding:12px;border-top:1px solid #EEE6D6;vertical-align:middle}
     <div id="todayBox"></div>
     <div class="tabs" id="lvTabs"></div>
     <div id="shelf"></div>
+    <div id="myLib"></div>
   </div>
 </section>
 
@@ -220,11 +221,15 @@ const SB_URL = 'https://cazdfejatsahzzakuxmq.supabase.co';
 const SB_KEY = 'sb_publishable_G47SCxG-fP1kdgJCtt-pRg_nguu35Gs';
 const STUDENT_DOMAIN = 'students.bigapple-english.app';
 const APP_URL = 'https://bigapple-english.vercel.app';
-const LEVELS = [1, 2, 3];
 const COLORS = ['#3E7C59','#E5B93F','#2F5D8A','#D9724A','#4E8F86','#6C5A9C','#B04A4A'];
 const LIGHT = { '#E5B93F': true };
-// 묶음 피드백: Level 1~3은 10권, Level 4부터는 5권마다 피드백 1개
-const batchSize = (level) => (level <= 3 ? 10 : 5);
+// 책장: 아이마다 하나 배정. 묶음 피드백 크기는 책장마다 (ORT 1~3은 10권, 4부터 5권)
+const shelfById = (id) => (S.shelves || []).find((x) => x.id === id) || null;
+const booksOf = (shelfId) => S.books.filter((b) => b.shelf_id === shelfId).sort((a, b) => a.num - b.num);
+const batchSize = (shelfId) => { const sh = shelfById(shelfId); return sh ? sh.batch_size : 10; };
+const shelfTitle = (shelfId) => (shelfById(shelfId) || {}).title || '책장 없음';
+const bookLabel = (b) => (b.label || b.id);
+const bookName = (id) => { const b = bookById(id); if (!b) return esc(id); const sh = shelfById(b.shelf_id); return `${esc(sh ? sh.series : b.series)} ${esc(bookLabel(b))} ${esc(b.title)}`; };
 const waiting = (subs) => subs.filter((x) => !x.batch_id && !x.feedback);
 
 const sb = supabase.createClient(SB_URL, SB_KEY);
@@ -254,7 +259,7 @@ function closeSheet() { stopRecording(true); $('sheet').classList.add('hidden');
 $('sheet').addEventListener('click', (e) => { if (e.target.id === 'sheet') closeSheet(); });
 
 // ───────── 상태 ─────────
-const S = { user: null, role: null, me: null, books: [], subs: [], level: 1 };
+const S = { user: null, role: null, me: null, books: [], shelves: [], subs: [] };
 
 // ───────── 로그인 ─────────
 $('segStu').onclick = () => { $('segStu').classList.add('on'); $('segTea').classList.remove('on'); $('formStu').classList.remove('hidden'); $('formTea').classList.add('hidden'); };
@@ -294,7 +299,7 @@ async function route() {
   if (t) { S.role = 'teacher'; S.me = t; show('scrTeacher'); await loadBooks(); teacherTab('pending'); return; }
   const { data: s, error } = await sb.from('rr_students').select('*').eq('user_id', S.user.id).maybeSingle();
   if (s && s.active) {
-    S.role = 'student'; S.me = s; S.level = s.level || 1;
+    S.role = 'student'; S.me = s;
     sb.rpc('rr_touch_login');
     show('scrStudent'); await loadStudent(); return;
   }
@@ -303,10 +308,13 @@ async function route() {
   $('stuErr').textContent = error ? '연결에 문제가 있어요. 잠시 뒤 다시 해 주세요.' : '등록되지 않은 계정이에요. 선생님께 물어보세요.';
 }
 
-async function loadBooks() {
-  if (S.books.length) return;
-  const { data } = await sb.from('rr_books').select('id,series,level,num,title,video_drive_id').order('level').order('num');
-  S.books = data || [];
+async function loadBooks(force) {
+  if (S.books.length && !force) return;
+  const [bk, sh] = await Promise.all([
+    sb.from('rr_books').select('id,series,level,num,title,video_drive_id,shelf_id,label').order('level').order('num'),
+    sb.from('rr_shelves').select('*').order('sort').order('title'),
+  ]);
+  S.books = bk.data || []; S.shelves = sh.data || [];
 }
 const bookById = (id) => S.books.find((b) => b.id === id);
 
@@ -323,15 +331,28 @@ async function loadStudent() {
   if (want && bookById(want)) { history.replaceState(null, '', location.pathname); openBook(want); }
 }
 const readSet = () => new Set(S.subs.map((x) => x.book_id));
-function nextBook(level) {
+function nextBook(shelfId) {
   const read = readSet();
-  return S.books.find((b) => b.level === level && !read.has(b.id)) || null;
+  return booksOf(shelfId).find((b) => !read.has(b.id)) || null;
+}
+// 책 한 줄(14권씩) + 선반
+function shelfRows(books, isRead, nextId) {
+  let rows = '';
+  for (let i = 0; i < books.length; i += 14) {
+    const chunk = books.slice(i, i + 14).map((b) => {
+      const r = isRead(b), c = bookColor(b), h = 54 + ((b.num * 7) % 11);
+      const cls = ['spine', r ? 'read' : '', r && LIGHT[c] ? 'light' : '', b.id === nextId ? 'next' : ''].join(' ');
+      return `<button class="${cls}" style="height:${h}px;${r ? 'background:' + c : ''}" data-b="${esc(b.id)}" aria-label="${esc(bookLabel(b))} ${esc(b.title)}${r ? ' 읽음' : ''}" type="button"><span>${esc(bookLabel(b))}</span></button>`;
+    }).join('');
+    rows += `<div class="row">${chunk}</div><div class="board" aria-hidden="true"></div>`;
+  }
+  return rows;
 }
 function renderStudent() {
   $('stuLabel').textContent = `${S.me.name}${S.me.class_name ? ' · ' + S.me.class_name : ''}`;
   const read = readSet();
   const fresh = (S.fbs || []).filter((f) => Date.now() - new Date(f.created_at).getTime() < 7 * 864e5);
-  const size = batchSize(S.me.level || 1), wait = waiting(S.subs).length;
+  const size = batchSize(S.me.shelf_id), wait = waiting(S.subs).length;
   const left = wait >= size ? 0 : size - wait;
   const dots = Array.from({ length: size }, (_, i) => `<span style="width:${size > 5 ? 14 : 22}px;height:8px;border-radius:999px;background:${i < Math.min(wait, size) ? 'var(--orange)' : '#2C3A5E'}"></span>`).join('');
   $('fbNotice').innerHTML = `
@@ -343,42 +364,45 @@ function renderStudent() {
   if (fresh.length) $('fbBtn').onclick = openFeedbacks;
   $('fbProg').onclick = openFeedbacks;
 
-  const nb = nextBook(S.me.level || 1);
+  const myShelf = S.me.shelf_id ? shelfById(S.me.shelf_id) : null;
+  if (!myShelf) {
+    $('todayBox').innerHTML = `<div class="card today"><span style="font-weight:700">아직 책장이 정해지지 않았어요. 선생님이 책장을 열어주면 시작할 수 있어요.</span></div>`;
+    $('lvTabs').innerHTML = ''; $('shelf').innerHTML = ''; renderMyLibrary(read); return;
+  }
+  const nb = nextBook(myShelf.id);
   $('todayBox').innerHTML = nb ? `
     <button class="card today" type="button" id="todayBtn">
-      <span class="mini" style="background:${bookColor(nb)};${LIGHT[bookColor(nb)] ? 'color:#121C33' : ''}">${esc(nb.id)}</span>
+      <span class="mini" style="background:${bookColor(nb)};${LIGHT[bookColor(nb)] ? 'color:#121C33' : ''}">${esc(bookLabel(nb))}</span>
       <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
         <span class="t1">오늘의 낭독</span>
         <span class="t2">${esc(nb.title)}</span>
-        <span class="t3">ORT ${esc(nb.id)} · 한 권 전체 · 듣기 → 3번 읽기 → 녹음</span>
+        <span class="t3">${esc(myShelf.series)} ${esc(bookLabel(nb))} · 한 권 전체 · 듣기 → 3번 읽기 → 녹음</span>
       </span>
       <span class="go">${micIcon('#F5EFE3', 20)}</span>
-    </button>` : `<div class="card today"><span style="font-weight:700">Level ${S.me.level} 책을 모두 읽었어요! 선생님께 다음 레벨을 물어보세요.</span></div>`;
+    </button>` : `<div class="card today"><span style="font-weight:700">${esc(myShelf.title)} 책을 모두 읽었어요! 선생님께 다음 책장을 물어보세요.</span></div>`;
   if (nb) $('todayBtn').onclick = () => openBook(nb.id);
 
-  $('lvTabs').innerHTML = LEVELS.map((lv) => {
-    const n = S.books.filter((b) => b.level === lv).length;
-    return `<button class="tab ${lv === S.level ? 'on' : ''}" data-lv="${lv}" type="button">Level ${lv}<small>${n}권</small></button>`;
-  }).join('');
-  $('lvTabs').querySelectorAll('.tab').forEach((b) => b.onclick = () => { S.level = +b.dataset.lv; renderStudent(); });
-
-  const books = S.books.filter((b) => b.level === S.level);
+  $('lvTabs').innerHTML = '';
+  const books = booksOf(myShelf.id);
   const done = books.filter((b) => read.has(b.id)).length;
-  const nextId = nb && nb.level === S.level ? nb.id : null;
-  let rows = '';
-  for (let i = 0; i < books.length; i += 14) {
-    const chunk = books.slice(i, i + 14).map((b) => {
-      const isRead = read.has(b.id), c = bookColor(b), h = 54 + ((b.num * 7) % 11);
-      const cls = ['spine', isRead ? 'read' : '', isRead && LIGHT[c] ? 'light' : '', b.id === nextId ? 'next' : ''].join(' ');
-      return `<button class="${cls}" style="height:${h}px;${isRead ? 'background:' + c : ''}" data-b="${esc(b.id)}" aria-label="ORT ${esc(b.id)} ${esc(b.title)}${isRead ? ' 읽음' : ''}" type="button"><span>${esc(b.id)}</span></button>`;
-    }).join('');
-    rows += `<div class="row">${chunk}</div><div class="board" aria-hidden="true"></div>`;
-  }
   $('shelf').innerHTML = `
-    <div class="shelfhead"><b>ORT Level ${S.level}</b><span>${done} / ${books.length}권 꽂음</span></div>
-    ${rows}
-    <p class="hint">${done === books.length && books.length ? `Level ${S.level} 완독! 선생님께 선물 받으러 가요 🎁` : '책을 눌러서 열어요. 다 읽고 녹음하면 흐린 책이 색깔 책으로 바뀌어요'}</p>`;
+    <div class="shelfhead"><b>${esc(myShelf.title)}</b><span>${done} / ${books.length}권 꽂음</span></div>
+    ${shelfRows(books, (b) => read.has(b.id), nb ? nb.id : null)}
+    <p class="hint">${done === books.length && books.length ? `${esc(myShelf.title)} 완독! 선생님께 선물 받으러 가요 🎁` : '책을 눌러서 열어요. 다 읽고 녹음하면 흐린 책이 색깔 책으로 바뀌어요'}</p>`;
   $('shelf').querySelectorAll('.spine').forEach((b) => b.onclick = () => openBook(b.dataset.b));
+  renderMyLibrary(read);
+}
+// 내 서재: 지금까지 읽은 책이 책장·레벨 상관없이 한 권씩 쌓임
+function renderMyLibrary(read) {
+  const mine = S.books.filter((b) => read.has(b.id));
+  const order = (S.shelves || []).map((x) => x.id);
+  mine.sort((a, b) => (order.indexOf(a.shelf_id) - order.indexOf(b.shelf_id)) || (a.num - b.num));
+  const groups = [...new Set(mine.map((b) => b.shelf_id))];
+  $('myLib').innerHTML = `
+    <div class="shelfhead" style="margin-top:30px"><b>내 서재</b><span>지금까지 ${mine.length}권</span></div>
+    ${mine.length ? groups.map((g) => `<div style="font-size:12.5px;color:var(--soft);margin:10px 2px 6px">${esc(shelfTitle(g))} · ${mine.filter((b) => b.shelf_id === g).length}권</div>${shelfRows(mine.filter((b) => b.shelf_id === g), () => true, null)}`).join('')
+      : '<p class="hint">책을 다 읽고 녹음하면 여기에 내 책이 한 권씩 쌓여요</p>'}`;
+  $('myLib').querySelectorAll('.spine').forEach((b) => b.onclick = () => openBook(b.dataset.b));
 }
 // 묶음 피드백 카드 (평균 점수·자주 틀린 단어는 자동 채점이 붙으면 표시)
 function fbCardHtml(f, dark) {
@@ -389,11 +413,11 @@ function fbCardHtml(f, dark) {
     ${words.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${words.map((w) => `<span class="tag wait">${esc(typeof w === 'string' ? w : w.word)}</span>`).join('')}</div>` : ''}`;
 }
 function openFeedbacks() {
-  const size = batchSize(S.me.level || 1), wait = waiting(S.subs).length;
+  const size = batchSize(S.me.shelf_id), wait = waiting(S.subs).length;
   openSheet(`
     <button class="ghost close" type="button" id="xBtn">닫기</button>
     <h2 class="serif" style="margin:6px 0 4px;font-size:24px;font-weight:600">선생님 피드백</h2>
-    <p class="sub">Level ${S.me.level}은 책 ${size}권을 읽을 때마다 피드백이 와요 · 지금 ${Math.min(wait, size)}/${size}권</p>
+    <p class="sub">${esc(shelfTitle(S.me.shelf_id))} 책장은 ${size}권을 읽을 때마다 피드백이 와요 · 지금 ${Math.min(wait, size)}/${size}권</p>
     <div class="hist" style="margin-top:14px">${(S.fbs || []).length
       ? S.fbs.map((f) => `<div class="item">${fbCardHtml(f, true)}</div>`).join('')
       : `<div class="item" style="color:var(--soft)">아직 받은 피드백이 없어요. 책을 ${size}권 읽고 녹음하면 선생님이 피드백을 보내줘요.</div>`}</div>`);
@@ -417,9 +441,9 @@ function openBook(id) {
   openSheet(`
     <button class="ghost close" type="button" id="xBtn">닫기</button>
     <div class="bookhead">
-      <span class="mini" style="background:${c};${LIGHT[c] ? 'color:#121C33' : ''}">${esc(b.id)}</span>
+      <span class="mini" style="background:${c};${LIGHT[c] ? 'color:#121C33' : ''}">${esc(bookLabel(b))}</span>
       <div><h2>${esc(b.title)}</h2>
-        <div style="font-size:13px;color:var(--soft)">ORT Level ${b.level} · ${b.num}번 · 한 권 전체</div>
+        <div style="font-size:13px;color:var(--soft)">${esc(shelfTitle(b.shelf_id))} · ${b.num}번 · 한 권 전체</div>
         ${mine.length ? `<span class="pill read">읽음 · ${mine.length}번 녹음</span>` : `<span class="pill new">아직 안 읽음</span>`}
       </div>
     </div>
@@ -564,7 +588,7 @@ async function loadTeacherData() {
 const stuName = (id) => (T.students.find((s) => s.user_id === id) || {}).name || '(삭제된 학생)';
 // 학생별로 피드백을 아직 안 받은 녹음 (오래된 것부터)
 function waitingFor(s) { return waiting(T.subs.filter((x) => x.student_id === s.user_id)).sort((a, b) => a.created_at.localeCompare(b.created_at)); }
-function dueStudents() { return T.students.filter((s) => s.active !== false && waitingFor(s).length >= batchSize(s.level)); }
+function dueStudents() { return T.students.filter((s) => s.active !== false && waitingFor(s).length >= batchSize(s.shelf_id)); }
 function progressBar(n, size) {
   const pct = Math.min(100, Math.round((n / size) * 100));
   return `<div style="height:8px;border-radius:999px;background:#F1EADB;min-width:120px"><div style="width:${pct}%;height:8px;border-radius:999px;background:${n >= size ? 'var(--orange)' : '#1F2E52'}"></div></div>`;
@@ -583,11 +607,11 @@ function renderPending() {
   let body = '';
   if (T.filter === 'due') {
     const cards = due.map((s) => {
-      const size = batchSize(s.level), batch = waitingFor(s).slice(0, size);
+      const size = batchSize(s.shelf_id), batch = waitingFor(s).slice(0, size);
       const scored = batch.filter((x) => x.score != null);
       const avg = scored.length ? Math.round(scored.reduce((a, x) => a + x.score, 0) / scored.length) : null;
       return `<div class="tcard">
-        <div class="tmeta"><b>${esc(s.name)}</b><span>${esc(s.class_name)}</span><span>Level ${s.level}</span><span class="tag wait">${size}권 모음</span></div>
+        <div class="tmeta"><b>${esc(s.name)}</b><span>${esc(s.class_name)}</span><span>${esc(shelfTitle(s.shelf_id))}</span><span class="tag wait">${size}권 모음</span></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px">
           <div style="background:var(--cream2);border:1px solid var(--sand);border-radius:12px;padding:10px 12px"><div style="font-size:12.5px;color:var(--muted)">평균 정확도</div><b style="font-size:20px">${avg != null ? avg + '점' : '–'}</b>${avg == null ? '<div style="font-size:12px;color:var(--muted)">자동 채점을 붙이면 여기에 계산돼요</div>' : ''}</div>
           <div style="background:var(--cream2);border:1px solid var(--sand);border-radius:12px;padding:10px 12px"><div style="font-size:12.5px;color:var(--muted)">자주 틀린 단어</div><b style="font-size:15px">–</b><div style="font-size:12px;color:var(--muted)">자동 채점을 붙이면 여기에 모여요</div></div>
@@ -595,7 +619,7 @@ function renderPending() {
         <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:700;font-size:14px">읽은 책 ${batch.length}권 · 녹음 듣기</summary>
           <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">${batch.map((x) => {
             const b = bookById(x.book_id) || { title: '' };
-            return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;border-top:1px solid #EEE6D6;padding-top:8px"><span style="min-width:200px;font-size:14px"><b>ORT ${esc(x.book_id)}</b> ${esc(b.title)} <span style="color:var(--muted);font-size:12.5px">${fmtDate(x.created_at)}</span></span><audio controls preload="none" style="flex:1;min-width:220px;height:36px" data-path="${esc(x.audio_path)}"></audio></div>`;
+            return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;border-top:1px solid #EEE6D6;padding-top:8px"><span style="min-width:200px;font-size:14px"><b>${bookName(x.book_id)}</b> <span style="color:var(--muted);font-size:12.5px">${fmtDate(x.created_at)}</span></span><audio controls preload="none" style="flex:1;min-width:220px;height:36px" data-path="${esc(x.audio_path)}"></audio></div>`;
           }).join('')}</div>
         </details>
         <label for="bf-${s.user_id}" style="color:var(--muted)">${size}권 묶음 피드백</label>
@@ -604,17 +628,17 @@ function renderPending() {
       </div>`;
     }).join('');
     const gathering = T.students.filter((s) => !due.includes(s)).map((s) => {
-      const size = batchSize(s.level), n = waitingFor(s).length;
-      return `<tr><td><b>${esc(s.name)}</b><div style="font-size:12px;color:var(--muted)">${esc(s.class_name)}</div></td><td>Level ${s.level}</td><td>${n} / ${size}권</td><td>${progressBar(n, size)}</td></tr>`;
+      const size = batchSize(s.shelf_id), n = waitingFor(s).length;
+      return `<tr><td><b>${esc(s.name)}</b><div style="font-size:12px;color:var(--muted)">${esc(s.class_name)}</div></td><td>${esc(shelfTitle(s.shelf_id))}</td><td>${n} / ${size}권</td><td>${progressBar(n, size)}</td></tr>`;
     }).join('');
     body = `<div class="tlist">${cards || `<div class="empty">지금 피드백 차례인 아이가 없어요 ☕</div>`}</div>
-      ${gathering ? `<b style="display:block;margin-top:26px;font-size:16px">모으는 중</b><div class="tablebox" style="margin-top:10px"><table style="min-width:520px"><thead><tr><th>학생</th><th>레벨</th><th>모은 녹음</th><th>다음 피드백까지</th></tr></thead><tbody>${gathering}</tbody></table></div>` : ''}`;
+      ${gathering ? `<b style="display:block;margin-top:26px;font-size:16px">모으는 중</b><div class="tablebox" style="margin-top:10px"><table style="min-width:520px"><thead><tr><th>학생</th><th>책장</th><th>모은 녹음</th><th>다음 피드백까지</th></tr></thead><tbody>${gathering}</tbody></table></div>` : ''}`;
   } else if (T.filter === 'all') {
     const list = T.subs.slice(0, 120);
     body = `<div class="tlist">${list.length ? list.map((x) => {
       const b = bookById(x.book_id) || { title: '' };
       return `<div class="tcard">
-        <div class="tmeta"><b>${esc(stuName(x.student_id))}</b><span>ORT ${esc(x.book_id)} ${esc(b.title)}</span><span>${fmtDate(x.created_at)}</span>${x.duration_sec ? `<span>${Math.floor(x.duration_sec / 60)}분 ${x.duration_sec % 60}초</span>` : ''}${x.batch_id || x.feedback ? '<span class="tag ok">피드백 완료</span>' : '<span class="tag wait">모으는 중</span>'}</div>
+        <div class="tmeta"><b>${esc(stuName(x.student_id))}</b><span>${bookName(x.book_id)}</span><span>${fmtDate(x.created_at)}</span>${x.duration_sec ? `<span>${Math.floor(x.duration_sec / 60)}분 ${x.duration_sec % 60}초</span>` : ''}${x.batch_id || x.feedback ? '<span class="tag ok">피드백 완료</span>' : '<span class="tag wait">모으는 중</span>'}</div>
         <div class="trow" style="align-items:center"><audio controls preload="none" style="flex:1;min-width:220px" data-path="${esc(x.audio_path)}"></audio><button class="tbtn" data-tdel="${x.id}" type="button">녹음 삭제</button></div>
       </div>`;
     }).join('') : `<div class="empty">아직 녹음이 없어요</div>`}</div>`;
@@ -637,7 +661,7 @@ async function sendBatchFeedback(studentId, btn) {
   const s = T.students.find((x) => x.user_id === studentId); if (!s) return;
   const txt = $('bf-' + studentId).value.trim();
   if (!txt) { toast('피드백을 한 줄 적어 주세요.'); return; }
-  const ids = waitingFor(s).slice(0, batchSize(s.level)).map((x) => x.id);
+  const ids = waitingFor(s).slice(0, batchSize(s.shelf_id)).map((x) => x.id);
   btn.disabled = true;
   const { error } = await sb.rpc('rr_give_feedback', { p_student: studentId, p_text: txt, p_submissions: ids });
   btn.disabled = false;
@@ -645,34 +669,92 @@ async function sendBatchFeedback(studentId, btn) {
   toast(`${s.name}에게 피드백을 보냈어요`); await loadTeacherData(); renderPending();
 }
 
-// 선생님 라이브러리: 레벨별 전체 책 + 읽은 학생
+// 선생님 라이브러리: 책장별 전체 책 + 읽은 학생 + 책장·책 추가
+function driveId(v) {
+  const t = String(v || '').trim(); if (!t) return null;
+  const m = t.match(/\/d\/([A-Za-z0-9_-]{20,})/) || t.match(/[?&]id=([A-Za-z0-9_-]{20,})/);
+  if (m) return m[1];
+  return /^[A-Za-z0-9_-]{20,}$/.test(t) ? t : null;
+}
+function slug(t) { return String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 function renderLibrary() {
-  const lv = T.libLevel;
+  if (!T.libShelf || !shelfById(T.libShelf)) T.libShelf = S.shelves[0] ? S.shelves[0].id : null;
+  const sh = shelfById(T.libShelf);
   const readers = {};
   T.subs.forEach((x) => { (readers[x.book_id] = readers[x.book_id] || new Set()).add(x.student_id); });
-  const books = S.books.filter((b) => b.level === lv);
-  const withVideo = books.filter((b) => b.video_drive_id).length;
+  const books = sh ? booksOf(sh.id) : [];
+  const assigned = sh ? T.students.filter((s) => s.shelf_id === sh.id).length : 0;
   $('tLibrary').innerHTML = `
     <div class="trow" style="margin-top:18px;align-items:center">
-      <b style="font-size:18px;margin-right:auto">ORT 라이브러리</b>
-      ${LEVELS.map((l) => `<button class="tbtn ${l === lv ? 'dark' : ''}" data-lib="${l}" type="button">Level ${l} · ${S.books.filter((b) => b.level === l).length}권</button>`).join('')}
+      <b style="font-size:18px;margin-right:auto">라이브러리</b>
+      ${S.shelves.map((x) => `<button class="tbtn ${x.id === T.libShelf ? 'dark' : ''}" data-lib="${esc(x.id)}" type="button">${esc(x.title)} · ${booksOf(x.id).length}권</button>`).join('')}
+      <button class="tbtn orange" id="newShelfBtn" type="button">+ 새 책장</button>
     </div>
-    <p style="margin:8px 2px 0;color:var(--muted);font-size:13.5px">Level ${lv} · ${books.length}권 · 영상 연결 ${withVideo}권. 책을 누르면 영상과 읽은 아이들이 보여요.</p>
+    <div id="shelfForm"></div>
+    ${sh ? `<p style="margin:10px 2px 0;color:var(--muted);font-size:13.5px">${esc(sh.title)} · ${books.length}권 · 영상 연결 ${books.filter((b) => b.video_drive_id).length}권 · 배정된 아이 ${assigned}명 · 녹음 ${sh.batch_size}권마다 피드백</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:16px">
       ${books.map((b) => {
         const c = bookColor(b), n = readers[b.id] ? readers[b.id].size : 0;
         return `<button type="button" data-lb="${esc(b.id)}" style="text-align:left;border:1px solid var(--sand);background:#fff;border-radius:14px;padding:10px;display:flex;gap:10px;align-items:stretch;min-height:96px">
-          <span style="width:30px;flex-shrink:0;border-radius:3px 6px 6px 3px;background:${c};box-shadow:inset 3px 0 0 rgba(0,0,0,.18);display:flex;align-items:flex-start;justify-content:center;padding-top:6px"><span style="writing-mode:vertical-rl;font-size:10.5px;font-weight:700;color:${LIGHT[c] ? '#121C33' : '#fff'}">${esc(b.id)}</span></span>
+          <span style="width:30px;flex-shrink:0;border-radius:3px 6px 6px 3px;background:${c};box-shadow:inset 3px 0 0 rgba(0,0,0,.18);display:flex;align-items:flex-start;justify-content:center;padding-top:6px"><span style="writing-mode:vertical-rl;font-size:10.5px;font-weight:700;color:${LIGHT[c] ? '#121C33' : '#fff'}">${esc(bookLabel(b))}</span></span>
           <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
             <b style="font-size:14px;line-height:1.3;color:var(--ink)">${esc(b.title)}</b>
-            <span style="font-size:12px;color:var(--muted)">${b.video_drive_id ? '영상 있음' : '영상 없음'}</span>
+            <span style="font-size:12px;color:${b.video_drive_id ? 'var(--muted)' : '#B3261E'}">${b.video_drive_id ? '영상 있음' : '영상 없음'}</span>
             <span style="font-size:12.5px;font-weight:700;color:${n ? 'var(--good)' : 'var(--muted)'}">${n ? `${n}명 읽음` : '아직 없음'}</span>
           </span>
         </button>`;
       }).join('')}
-    </div>`;
-  $('tLibrary').querySelectorAll('[data-lib]').forEach((b) => b.onclick = () => { T.libLevel = +b.dataset.lib; renderLibrary(); });
+      <button type="button" id="addBookBtn" style="border:2px dashed #D9CBB0;background:transparent;border-radius:14px;min-height:96px;font-weight:700;color:var(--muted)">+ 책 추가</button>
+    </div>
+    <div id="bookForm"></div>` : `<div class="empty">아직 책장이 없어요. "+ 새 책장"으로 만들어 주세요.</div>`}`;
+  $('tLibrary').querySelectorAll('[data-lib]').forEach((b) => b.onclick = () => { T.libShelf = b.dataset.lib; renderLibrary(); });
   $('tLibrary').querySelectorAll('[data-lb]').forEach((b) => b.onclick = () => openLibraryBook(b.dataset.lb));
+  $('newShelfBtn').onclick = shelfFormOpen;
+  if ($('addBookBtn')) $('addBookBtn').onclick = () => bookFormOpen(sh);
+}
+function shelfFormOpen() {
+  $('shelfForm').innerHTML = `<div class="tcard" style="margin-top:14px">
+    <b style="font-size:16px">새 책장 만들기</b>
+    <p style="margin:6px 0 0;color:var(--muted);font-size:13.5px">예) 시리즈 "Reading Roots", 레벨 1 → "Reading Roots Level 1" 책장이 생겨요.</p>
+    <div class="form">
+      <div><label for="nsSeries">시리즈 이름</label><input class="tinput" id="nsSeries" placeholder="Reading Roots"></div>
+      <div><label for="nsLevel">레벨 (숫자)</label><input class="tinput" id="nsLevel" inputmode="numeric" placeholder="1"></div>
+      <div><label for="nsBatch">피드백 묶음</label><select class="tinput" id="nsBatch"><option value="10">녹음 10권마다</option><option value="5">녹음 5권마다</option></select></div>
+    </div>
+    <p id="nsErr" class="err" style="color:#B3261E"></p>
+    <div class="trow"><button class="tbtn orange" id="nsSave" type="button">책장 만들기</button></div></div>`;
+  $('nsSave').onclick = async () => {
+    const series = $('nsSeries').value.trim(), level = parseInt($('nsLevel').value, 10), batch = +$('nsBatch').value;
+    if (!series || !(level >= 0)) { $('nsErr').textContent = '시리즈 이름과 레벨 숫자를 적어 주세요.'; return; }
+    const id = `${slug(series) || 'shelf' + Date.now().toString(36)}-${level}`;
+    const sort = (S.shelves.reduce((m, x) => Math.max(m, x.sort || 0), 0)) + 10;
+    const { error } = await sb.from('rr_shelves').insert({ id, title: `${series} Level ${level}`, series, level, batch_size: batch, sort });
+    if (error) { $('nsErr').textContent = /duplicate|unique/i.test(error.message) ? '이미 같은 시리즈·레벨 책장이 있어요.' : '만들지 못했어요: ' + error.message; return; }
+    await loadBooks(true); T.libShelf = id; toast('책장을 만들었어요'); renderLibrary();
+  };
+}
+function bookFormOpen(sh) {
+  const next = booksOf(sh.id).reduce((m, b) => Math.max(m, b.num), 0) + 1;
+  $('bookForm').innerHTML = `<div class="tcard" style="margin-top:14px">
+    <b style="font-size:16px">${esc(sh.title)}에 책 추가</b>
+    <div class="form">
+      <div><label for="nbNum">번호</label><input class="tinput" id="nbNum" inputmode="numeric" value="${next}"></div>
+      <div style="grid-column:span 2"><label for="nbTitle">제목</label><input class="tinput" id="nbTitle" placeholder="Where Is My Phone?"></div>
+      <div style="grid-column:1/-1"><label for="nbVideo">영상 링크 (구글 드라이브 공유 링크, 없으면 비워두기)</label><input class="tinput" id="nbVideo" placeholder="https://drive.google.com/file/d/…/view"></div>
+    </div>
+    <p id="nbErr" class="err" style="color:#B3261E"></p>
+    <div class="trow"><button class="tbtn orange" id="nbSave" type="button">책 추가</button></div></div>`;
+  $('nbSave').onclick = async () => {
+    const num = parseInt($('nbNum').value, 10), title = $('nbTitle').value.trim(), v = $('nbVideo').value.trim();
+    const vid = driveId(v);
+    if (!(num > 0) || !title) { $('nbErr').textContent = '번호와 제목을 적어 주세요.'; return; }
+    if (v && !vid) { $('nbErr').textContent = '영상 링크를 알아볼 수 없어요. 드라이브에서 "링크 복사"한 주소를 붙여 주세요.'; return; }
+    const ort = sh.series === 'ORT';
+    const row = { id: ort ? `${sh.level}-${num}` : `${sh.id}-${num}`, series: sh.series, level: sh.level, num, title, shelf_id: sh.id, label: ort ? null : String(num), video_drive_id: vid };
+    const { error } = await sb.from('rr_books').insert(row);
+    if (error) { $('nbErr').textContent = /duplicate|unique/i.test(error.message) ? '이 책장에 같은 번호의 책이 이미 있어요.' : '추가하지 못했어요: ' + error.message; return; }
+    await loadBooks(true); toast(`${num}번 책을 추가했어요`); renderLibrary(); bookFormOpen(sh);
+  };
 }
 function openLibraryBook(id) {
   const b = bookById(id); if (!b) return;
@@ -682,46 +764,83 @@ function openLibraryBook(id) {
     : `<p style="margin:0;color:var(--soft)">이 책은 영상이 아직 연결되지 않았어요.</p>`;
   openSheet(`
     <button class="ghost close" type="button" id="xBtn">닫기</button>
-    <div class="bookhead"><span class="mini" style="background:${bookColor(b)};${LIGHT[bookColor(b)] ? 'color:#121C33' : ''}">${esc(b.id)}</span>
-      <div><h2>${esc(b.title)}</h2><div style="font-size:13px;color:var(--soft)">ORT Level ${b.level} · ${b.num}번</div></div></div>
-    <div class="step"><h3>영상</h3>${video}</div>
+    <div class="bookhead"><span class="mini" style="background:${bookColor(b)};${LIGHT[bookColor(b)] ? 'color:#121C33' : ''}">${esc(bookLabel(b))}</span>
+      <div><h2>${esc(b.title)}</h2><div style="font-size:13px;color:var(--soft)">${esc(shelfTitle(b.shelf_id))} · ${b.num}번</div></div></div>
+    <div class="step"><h3>영상</h3>${video}
+      <div style="display:flex;gap:8px;margin-top:10px"><input class="input" id="vidIn" style="min-height:44px;font-size:14px" placeholder="영상 링크 바꾸기 (드라이브 공유 링크)"><button class="btn line" id="vidSave" type="button" style="min-height:44px">저장</button></div>
+    </div>
     <div class="step"><h3>읽은 아이 · ${new Set(subs.map((x) => x.student_id)).size}명</h3>
       <div class="hist">${subs.length ? subs.map((x) => `<div class="item"><div style="font-size:13.5px"><b>${esc(stuName(x.student_id))}</b> <span style="color:var(--soft)">${fmtDate(x.created_at)}</span></div><audio controls preload="none" data-path="${esc(x.audio_path)}"></audio></div>`).join('') : '<div class="item" style="color:var(--soft)">아직 이 책을 읽은 아이가 없어요</div>'}</div>
     </div>`);
   $('xBtn').onclick = closeSheet;
+  $('vidSave').onclick = async () => {
+    const vid = driveId($('vidIn').value);
+    if (!vid) { toast('영상 링크를 알아볼 수 없어요'); return; }
+    const { error } = await sb.from('rr_books').update({ video_drive_id: vid }).eq('id', b.id);
+    if (error) { toast('저장 실패: ' + error.message); return; }
+    await loadBooks(true); toast('영상을 바꿨어요'); openLibraryBook(b.id); renderLibrary();
+  };
   attachAudio($('panel'));
 }
 
+function shelfOptions(sel) {
+  return `<option value="">책장 없음</option>` + S.shelves.map((x) => `<option value="${esc(x.id)}" ${x.id === sel ? 'selected' : ''}>${esc(x.title)}</option>`).join('');
+}
 function renderStudents() {
-  const levelCount = (lv) => S.books.filter((b) => b.level === lv).length;
+  const classes = [...new Set(T.students.map((s) => s.class_name).filter(Boolean))].sort();
   const rows = T.students.map((s) => {
     const mine = T.subs.filter((x) => x.student_id === s.user_id);
     const readIds = new Set(mine.map((x) => x.book_id));
-    const inLevel = S.books.filter((b) => b.level === s.level && readIds.has(b.id)).length;
-    const total = levelCount(s.level);
-    const clear = total && inLevel >= total;
+    const shelfBooks = s.shelf_id ? booksOf(s.shelf_id) : [];
+    const inShelf = shelfBooks.filter((b) => readIds.has(b.id)).length;
+    const total = shelfBooks.length;
+    const clear = total && inShelf >= total;
     const last = mine[0];
+    const size = batchSize(s.shelf_id);
     return `<tr>
       <td><b>${esc(s.name)}</b><div style="font-size:12px;color:var(--muted)">${esc(s.class_name)}</div></td>
       <td>${esc(s.login_id)}</td>
       <td style="font-variant-numeric:tabular-nums">${esc(s.pin)}</td>
-      <td><select class="tinput" style="min-height:38px;width:auto" data-lv="${s.user_id}">${LEVELS.map((l) => `<option value="${l}" ${l === s.level ? 'selected' : ''}>Level ${l}</option>`).join('')}</select></td>
-      <td>${inLevel} / ${total}권 ${clear ? '<span class="tag gift">완독! 선물 준비</span>' : ''}</td>
-      <td>${Math.min(waitingFor(s).length, batchSize(s.level))} / ${batchSize(s.level)}권</td>
-      <td>${last ? fmtDate(last.created_at) + '<div style="font-size:12px;color:var(--muted)">ORT ' + esc(last.book_id) + '</div>' : '<span style="color:var(--muted)">아직 없음</span>'}</td>
+      <td><select class="tinput" style="min-height:38px;width:auto" data-sh="${s.user_id}">${shelfOptions(s.shelf_id)}</select></td>
+      <td>${s.shelf_id ? `${inShelf} / ${total}권` : '-'} ${clear ? '<span class="tag gift">완독! 선물 준비</span>' : ''}<div style="font-size:12px;color:var(--muted)">전체 ${readIds.size}권 읽음</div></td>
+      <td>${Math.min(waitingFor(s).length, size)} / ${size}권</td>
+      <td>${last ? fmtDate(last.created_at) + '<div style="font-size:12px;color:var(--muted)">' + bookName(last.book_id) + '</div>' : '<span style="color:var(--muted)">아직 없음</span>'}</td>
       <td>${s.last_login_at ? fmtDate(s.last_login_at) : '<span style="color:var(--muted)">-</span>'}</td>
       <td><div class="trow" style="margin:0"><button class="tbtn" data-copy="${s.user_id}" type="button">안내문</button><button class="tbtn" data-pin="${s.user_id}" type="button">비번 바꾸기</button></div></td>
     </tr>`;
   }).join('');
   $('tStudents').innerHTML = T.students.length ? `
+    <div class="tcard" style="margin-top:18px">
+      <b style="font-size:15px">반 전체 책장 바꾸기</b>
+      <div class="trow" style="align-items:center">
+        <select class="tinput" id="bulkClass" style="width:auto">${classes.length ? classes.map((c) => `<option>${esc(c)}</option>`).join('') : '<option value="">반 이름이 있는 학생이 없어요</option>'}</select>
+        <span style="color:var(--muted)">→</span>
+        <select class="tinput" id="bulkShelf" style="width:auto">${shelfOptions(S.shelves[0] ? S.shelves[0].id : '')}</select>
+        <button class="tbtn orange" id="bulkBtn" type="button">반 전체에 적용</button>
+      </div>
+    </div>
     <div class="tablebox"><table>
-      <thead><tr><th>학생</th><th>아이디</th><th>비밀번호</th><th>레벨</th><th>레벨 진도</th><th>다음 피드백</th><th>마지막 녹음</th><th>마지막 접속</th><th></th></tr></thead>
+      <thead><tr><th>학생</th><th>아이디</th><th>비밀번호</th><th>책장</th><th>책장 진도</th><th>다음 피드백</th><th>마지막 녹음</th><th>마지막 접속</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div>
     <div id="copyOut"></div>` : `<div class="empty">아직 학생이 없어요. "학생 추가"에서 만들어 주세요.</div>`;
-  $('tStudents').querySelectorAll('[data-lv]').forEach((sel) => sel.onchange = async () => {
-    const { error } = await sb.from('rr_students').update({ level: +sel.value }).eq('user_id', sel.dataset.lv);
-    toast(error ? '변경 실패: ' + error.message : '레벨을 바꿨어요'); await loadTeacherData(); renderStudents();
+  const setShelf = async (ids, shelfId) => {
+    const sh = shelfById(shelfId);
+    const patch = { shelf_id: shelfId || null }; if (sh) patch.level = sh.level;
+    for (const id of ids) { const { error } = await sb.from('rr_students').update(patch).eq('user_id', id); if (error) { toast('변경 실패: ' + error.message); return false; } }
+    return true;
+  };
+  $('tStudents').querySelectorAll('[data-sh]').forEach((sel) => sel.onchange = async () => {
+    if (await setShelf([sel.dataset.sh], sel.value)) toast('책장을 바꿨어요');
+    await loadTeacherData(); renderStudents();
   });
+  if ($('bulkBtn')) $('bulkBtn').onclick = async () => {
+    const cls = $('bulkClass').value, shelfId = $('bulkShelf').value;
+    if (!cls) { toast('먼저 학생에게 반 이름을 넣어 주세요'); return; }
+    const ids = T.students.filter((s) => s.class_name === cls).map((s) => s.user_id);
+    if (!confirmInline($('bulkBtn'), `${cls} ${ids.length}명을 ${shelfId ? shelfTitle(shelfId) : '책장 없음'}(으)로 바꿀까요?`)) return;
+    if (await setShelf(ids, shelfId)) toast(`${cls} ${ids.length}명의 책장을 바꿨어요`);
+    await loadTeacherData(); renderStudents();
+  };
   $('tStudents').querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => showGuide(T.students.find((s) => s.user_id === b.dataset.copy)));
   $('tStudents').querySelectorAll('[data-pin]').forEach((b) => b.onclick = async () => {
     const s = T.students.find((x) => x.user_id === b.dataset.pin);
@@ -769,7 +888,7 @@ function renderAdd() {
         <div><label for="aName">이름</label><input class="tinput" id="aName" placeholder="김지호"></div>
         <div><label for="aClass">반</label><input class="tinput" id="aClass" placeholder="월수금 파닉스 리딩반"></div>
         <div><label for="aLogin">아이디</label><input class="tinput" id="aLogin" autocapitalize="none" placeholder="jiho"></div>
-        <div><label for="aLevel">ORT 레벨</label><select class="tinput" id="aLevel">${LEVELS.map((l) => `<option value="${l}">Level ${l}</option>`).join('')}</select></div>
+        <div><label for="aShelf">책장</label><select class="tinput" id="aShelf">${shelfOptions(S.shelves[0] ? S.shelves[0].id : '')}</select></div>
         <div><label for="aPin">비밀번호 (숫자 4자리)</label><input class="tinput" id="aPin" inputmode="numeric" maxlength="4" value="${pin}"></div>
       </div>
       <p id="aErr" class="err" style="color:#B3261E"></p>
@@ -781,7 +900,7 @@ function renderAdd() {
 }
 async function addStudent() {
   const name = $('aName').value.trim(), cls = $('aClass').value.trim();
-  const login = $('aLogin').value.trim().toLowerCase(), pin = $('aPin').value.trim(), level = +$('aLevel').value;
+  const login = $('aLogin').value.trim().toLowerCase(), pin = $('aPin').value.trim(), shelfId = $('aShelf').value || null, level = (shelfById(shelfId) || { level: 1 }).level;
   $('aErr').textContent = '';
   if (!name) return ($('aErr').textContent = '이름을 적어 주세요.');
   if (!/^[a-z0-9][a-z0-9_-]{2,19}$/.test(login)) return ($('aErr').textContent = '아이디는 영어 소문자·숫자 3~20자로 만들어 주세요.');
@@ -796,7 +915,7 @@ async function addStudent() {
     $('aErr').textContent = /registered|exists/i.test(error?.message || '') ? '이미 쓰고 있는 아이디예요. 다른 아이디로 해 주세요.' : '계정을 만들지 못했어요: ' + (error?.message || '알 수 없는 오류');
     return;
   }
-  const row = { user_id: data.user.id, login_id: login, name, class_name: cls, level, pin };
+  const row = { user_id: data.user.id, login_id: login, name, class_name: cls, level, pin, shelf_id: shelfId };
   const ins = await sb.from('rr_students').insert(row);
   $('aBtn').disabled = false; $('aBtn').textContent = '학생 만들기';
   if (ins.error) { $('aErr').textContent = '학생 정보 저장 실패: ' + ins.error.message; return; }
