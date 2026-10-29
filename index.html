@@ -195,7 +195,8 @@ td{padding:12px;border-top:1px solid #EEE6D6;vertical-align:middle}
     <div class="twrap">
       <div class="brand"><span id="logoT"></span><div><small>BIG APPLE ENGLISH</small><span class="serif" style="font-size:20px;color:var(--cream)">Reading Roots <em style="color:var(--orange2)">Dashboard</em></span></div></div>
       <div class="ttabs">
-        <button class="ttab on" data-t="pending" type="button">새 녹음<span class="badge" id="pendCount">0</span></button>
+        <button class="ttab on" data-t="pending" type="button">피드백<span class="badge" id="pendCount">0</span></button>
+        <button class="ttab" data-t="library" type="button">라이브러리</button>
         <button class="ttab" data-t="students" type="button">학생</button>
         <button class="ttab" data-t="add" type="button">학생 추가</button>
         <button class="ghost" id="teaLogout" type="button">로그아웃</button>
@@ -204,6 +205,7 @@ td{padding:12px;border-top:1px solid #EEE6D6;vertical-align:middle}
   </div>
   <div class="twrap">
     <div id="tPending"></div>
+    <div id="tLibrary" class="hidden"></div>
     <div id="tStudents" class="hidden"></div>
     <div id="tAdd" class="hidden"></div>
   </div>
@@ -221,6 +223,9 @@ const APP_URL = 'https://bigapple-english.vercel.app';
 const LEVELS = [1, 2, 3];
 const COLORS = ['#3E7C59','#E5B93F','#2F5D8A','#D9724A','#4E8F86','#6C5A9C','#B04A4A'];
 const LIGHT = { '#E5B93F': true };
+// 묶음 피드백: Level 1~3은 10권, Level 4부터는 5권마다 피드백 1개
+const batchSize = (level) => (level <= 3 ? 10 : 5);
+const waiting = (subs) => subs.filter((x) => !x.batch_id && !x.feedback);
 
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const $ = (id) => document.getElementById(id);
@@ -308,8 +313,11 @@ const bookById = (id) => S.books.find((b) => b.id === id);
 // ───────── 학생 화면 ─────────
 async function loadStudent() {
   await loadBooks();
-  const { data } = await sb.from('rr_submissions').select('id,book_id,audio_path,created_at,feedback,feedback_at').eq('student_id', S.user.id).order('created_at', { ascending: false });
-  S.subs = data || [];
+  const [su, fb] = await Promise.all([
+    sb.from('rr_submissions').select('id,book_id,audio_path,created_at,feedback,feedback_at,batch_id,score').eq('student_id', S.user.id).order('created_at', { ascending: false }),
+    sb.from('rr_feedbacks').select('id,text,book_count,avg_score,top_words,created_at').eq('student_id', S.user.id).order('created_at', { ascending: false }),
+  ]);
+  S.subs = su.data || []; S.fbs = fb.data || [];
   renderStudent();
   const want = new URLSearchParams(location.search).get('book');
   if (want && bookById(want)) { history.replaceState(null, '', location.pathname); openBook(want); }
@@ -322,10 +330,18 @@ function nextBook(level) {
 function renderStudent() {
   $('stuLabel').textContent = `${S.me.name}${S.me.class_name ? ' · ' + S.me.class_name : ''}`;
   const read = readSet();
-  const fresh = S.subs.filter((x) => x.feedback && Date.now() - new Date(x.feedback_at).getTime() < 7 * 864e5);
-  $('fbNotice').innerHTML = fresh.length
-    ? `<button class="notice" type="button" id="fbBtn"><b>선생님 피드백 ${fresh.length}개</b>가 도착했어요. 눌러서 확인해요</button>` : '';
-  if (fresh.length) $('fbBtn').onclick = () => openBook(fresh[0].book_id);
+  const fresh = (S.fbs || []).filter((f) => Date.now() - new Date(f.created_at).getTime() < 7 * 864e5);
+  const size = batchSize(S.me.level || 1), wait = waiting(S.subs).length;
+  const left = wait >= size ? 0 : size - wait;
+  const dots = Array.from({ length: size }, (_, i) => `<span style="width:${size > 5 ? 14 : 22}px;height:8px;border-radius:999px;background:${i < Math.min(wait, size) ? 'var(--orange)' : '#2C3A5E'}"></span>`).join('');
+  $('fbNotice').innerHTML = `
+    ${fresh.length ? `<button class="notice" type="button" id="fbBtn"><b>선생님 피드백</b>이 도착했어요. 눌러서 확인해요</button>` : ''}
+    <button class="notice" type="button" id="fbProg" style="display:flex;flex-direction:column;gap:8px">
+      <span>${left ? `<b>${left}권</b> 더 읽으면 선생님 피드백이 와요` : '<b>다 모았어요!</b> 선생님이 곧 피드백을 보내줄 거예요'}</span>
+      <span style="display:flex;gap:4px;flex-wrap:wrap">${dots}</span>
+    </button>`;
+  if (fresh.length) $('fbBtn').onclick = openFeedbacks;
+  $('fbProg').onclick = openFeedbacks;
 
   const nb = nextBook(S.me.level || 1);
   $('todayBox').innerHTML = nb ? `
@@ -363,6 +379,25 @@ function renderStudent() {
     ${rows}
     <p class="hint">${done === books.length && books.length ? `Level ${S.level} 완독! 선생님께 선물 받으러 가요 🎁` : '책을 눌러서 열어요. 다 읽고 녹음하면 흐린 책이 색깔 책으로 바뀌어요'}</p>`;
   $('shelf').querySelectorAll('.spine').forEach((b) => b.onclick = () => openBook(b.dataset.b));
+}
+// 묶음 피드백 카드 (평균 점수·자주 틀린 단어는 자동 채점이 붙으면 표시)
+function fbCardHtml(f, dark) {
+  const words = Array.isArray(f.top_words) ? f.top_words : [];
+  const sub = dark ? 'var(--soft)' : 'var(--muted)';
+  return `<div style="font-size:12.5px;color:${sub}">${fmtDate(f.created_at)} · ${f.book_count}권 읽고 받은 피드백${f.avg_score != null ? ` · 평균 ${f.avg_score}점` : ''}</div>
+    <div class="fb">${esc(f.text)}</div>
+    ${words.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${words.map((w) => `<span class="tag wait">${esc(typeof w === 'string' ? w : w.word)}</span>`).join('')}</div>` : ''}`;
+}
+function openFeedbacks() {
+  const size = batchSize(S.me.level || 1), wait = waiting(S.subs).length;
+  openSheet(`
+    <button class="ghost close" type="button" id="xBtn">닫기</button>
+    <h2 class="serif" style="margin:6px 0 4px;font-size:24px;font-weight:600">선생님 피드백</h2>
+    <p class="sub">Level ${S.me.level}은 책 ${size}권을 읽을 때마다 피드백이 와요 · 지금 ${Math.min(wait, size)}/${size}권</p>
+    <div class="hist" style="margin-top:14px">${(S.fbs || []).length
+      ? S.fbs.map((f) => `<div class="item">${fbCardHtml(f, true)}</div>`).join('')
+      : `<div class="item" style="color:var(--soft)">아직 받은 피드백이 없어요. 책을 ${size}권 읽고 녹음하면 선생님이 피드백을 보내줘요.</div>`}</div>`);
+  $('xBtn').onclick = closeSheet;
 }
 function micIcon(color, size) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>`;
@@ -477,7 +512,10 @@ async function renderHist(list) {
   const box = $('hist'); if (!box) return;
   box.innerHTML = list.map((x) => `<div class="item"><div style="font-size:13px;color:var(--soft)">${fmtDate(x.created_at)} 녹음</div>
     <audio controls preload="none" data-path="${esc(x.audio_path)}"></audio>
-    ${x.feedback ? `<div class="fb"><b>선생님:</b> ${esc(x.feedback)}</div>` : `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px"><span style="font-size:12.5px;color:var(--soft)">선생님이 아직 듣는 중이에요</span><button class="ghost" data-del="${x.id}" type="button">이 녹음 지우기</button></div>`}</div>`).join('');
+    ${x.feedback ? `<div class="fb"><b>선생님:</b> ${esc(x.feedback)}</div>`
+      : x.batch_id ? `<button class="ghost" style="margin-top:8px" data-fbs="1" type="button">선생님 피드백 보기</button>`
+      : `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px"><span style="font-size:12.5px;color:var(--soft)">다음 묶음 피드백에 들어가요</span><button class="ghost" data-del="${x.id}" type="button">이 녹음 지우기</button></div>`}</div>`).join('');
+  box.querySelectorAll('[data-fbs]').forEach((b) => b.onclick = openFeedbacks);
   box.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
     if (!confirmInline(b, '지운 녹음은 되돌릴 수 없어요')) return;
     const sub = S.subs.find((s) => s.id === b.dataset.del); if (!sub) return;
@@ -490,7 +528,7 @@ async function renderHist(list) {
 // 녹음 파일과 기록을 함께 지움 (학생: 피드백 전 자기 녹음만, 선생님: 모두)
 async function deleteSubmission(sub) {
   const { data, error } = await sb.from('rr_submissions').delete().eq('id', sub.id).select('id');
-  if (error || !data || !data.length) { toast('지울 수 없어요. 선생님 피드백이 달린 녹음은 지울 수 없어요.'); return false; }
+  if (error || !data || !data.length) { toast('지울 수 없어요. 선생님 피드백에 들어간 녹음은 지울 수 없어요.'); return false; }
   if (sub.audio_path) await sb.storage.from('recordings').remove([sub.audio_path]);
   return true;
 }
@@ -502,62 +540,156 @@ async function attachAudio(root) {
 }
 
 // ───────── 선생님 화면 ─────────
-let T = { students: [], subs: [], filter: 'pending' };
+let T = { students: [], subs: [], fbs: [], filter: 'due', libLevel: 1 };
+const TABS = { pending: 'tPending', library: 'tLibrary', students: 'tStudents', add: 'tAdd' };
 document.querySelectorAll('.ttab[data-t]').forEach((b) => b.onclick = () => teacherTab(b.dataset.t));
 async function teacherTab(t) {
   document.querySelectorAll('.ttab[data-t]').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
-  $('tPending').classList.toggle('hidden', t !== 'pending');
-  $('tStudents').classList.toggle('hidden', t !== 'students');
-  $('tAdd').classList.toggle('hidden', t !== 'add');
+  Object.entries(TABS).forEach(([k, id]) => $(id).classList.toggle('hidden', k !== t));
   await loadTeacherData();
   if (t === 'pending') renderPending();
+  if (t === 'library') renderLibrary();
   if (t === 'students') renderStudents();
   if (t === 'add') renderAdd();
 }
 async function loadTeacherData() {
-  const [st, su] = await Promise.all([
+  const [st, su, fb] = await Promise.all([
     sb.from('rr_students').select('*').order('class_name').order('name'),
-    sb.from('rr_submissions').select('id,student_id,book_id,audio_path,duration_sec,created_at,feedback,feedback_at').order('created_at', { ascending: false }).limit(500),
+    sb.from('rr_submissions').select('id,student_id,book_id,audio_path,duration_sec,created_at,feedback,feedback_at,batch_id,score').order('created_at', { ascending: false }).limit(2000),
+    sb.from('rr_feedbacks').select('id,student_id,text,book_count,avg_score,top_words,created_at').order('created_at', { ascending: false }).limit(300),
   ]);
-  T.students = st.data || []; T.subs = su.data || [];
-  $('pendCount').textContent = T.subs.filter((x) => !x.feedback).length;
+  T.students = st.data || []; T.subs = su.data || []; T.fbs = fb.data || [];
+  $('pendCount').textContent = dueStudents().length;
 }
 const stuName = (id) => (T.students.find((s) => s.user_id === id) || {}).name || '(삭제된 학생)';
+// 학생별로 피드백을 아직 안 받은 녹음 (오래된 것부터)
+function waitingFor(s) { return waiting(T.subs.filter((x) => x.student_id === s.user_id)).sort((a, b) => a.created_at.localeCompare(b.created_at)); }
+function dueStudents() { return T.students.filter((s) => s.active !== false && waitingFor(s).length >= batchSize(s.level)); }
+function progressBar(n, size) {
+  const pct = Math.min(100, Math.round((n / size) * 100));
+  return `<div style="height:8px;border-radius:999px;background:#F1EADB;min-width:120px"><div style="width:${pct}%;height:8px;border-radius:999px;background:${n >= size ? 'var(--orange)' : '#1F2E52'}"></div></div>`;
+}
 
 function renderPending() {
-  const list = T.subs.filter((x) => T.filter === 'all' || !x.feedback).slice(0, 80);
-  $('tPending').innerHTML = `
+  const due = dueStudents();
+  const head = `
     <div class="trow" style="margin-top:18px;align-items:center">
-      <b style="font-size:18px;margin-right:auto">${T.filter === 'all' ? '모든 녹음' : '피드백을 기다리는 녹음'}</b>
-      <button class="tbtn ${T.filter === 'pending' ? 'dark' : ''}" data-f="pending" type="button">기다리는 것만</button>
-      <button class="tbtn ${T.filter === 'all' ? 'dark' : ''}" data-f="all" type="button">전체</button>
+      <b style="font-size:18px;margin-right:auto">${{ due: '피드백 차례', all: '모든 녹음', sent: '보낸 피드백' }[T.filter]}</b>
+      <button class="tbtn ${T.filter === 'due' ? 'dark' : ''}" data-f="due" type="button">피드백 차례 ${due.length ? `(${due.length})` : ''}</button>
+      <button class="tbtn ${T.filter === 'all' ? 'dark' : ''}" data-f="all" type="button">모든 녹음</button>
+      <button class="tbtn ${T.filter === 'sent' ? 'dark' : ''}" data-f="sent" type="button">보낸 피드백</button>
     </div>
-    <div class="tlist">${list.length ? list.map((x) => {
-      const b = bookById(x.book_id) || { title: '' };
-      return `<div class="tcard" data-id="${x.id}">
-        <div class="tmeta"><b>${esc(stuName(x.student_id))}</b><span>ORT ${esc(x.book_id)} ${esc(b.title)}</span><span>${fmtDate(x.created_at)}</span>${x.duration_sec ? `<span>${Math.floor(x.duration_sec/60)}분 ${x.duration_sec%60}초</span>` : ''}${x.feedback ? '<span class="tag ok">피드백 완료</span>' : '<span class="tag wait">기다리는 중</span>'}</div>
-        <audio controls preload="none" style="margin-top:10px" data-path="${esc(x.audio_path)}"></audio>
-        <label for="fb-${x.id}" style="color:var(--muted)">텍스트 피드백</label>
-        <textarea class="tarea" id="fb-${x.id}" placeholder="예) 끝까지 또박또박 잘 읽었어요! th 소리만 혀를 살짝 내밀고 다시 연습해 봐요.">${esc(x.feedback || '')}</textarea>
-        <div class="trow"><button class="tbtn orange" data-save="${x.id}" type="button">피드백 보내기</button><button class="tbtn" data-tdel="${x.id}" type="button" style="margin-left:auto">녹음 삭제</button></div>
+    <p style="margin:8px 2px 0;color:var(--muted);font-size:13.5px">Level 1~3은 녹음 10권, Level 4부터는 5권이 모이면 피드백 차례로 올라와요. 한 번에 피드백 하나만 보내면 돼요.</p>`;
+  let body = '';
+  if (T.filter === 'due') {
+    const cards = due.map((s) => {
+      const size = batchSize(s.level), batch = waitingFor(s).slice(0, size);
+      const scored = batch.filter((x) => x.score != null);
+      const avg = scored.length ? Math.round(scored.reduce((a, x) => a + x.score, 0) / scored.length) : null;
+      return `<div class="tcard">
+        <div class="tmeta"><b>${esc(s.name)}</b><span>${esc(s.class_name)}</span><span>Level ${s.level}</span><span class="tag wait">${size}권 모음</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px">
+          <div style="background:var(--cream2);border:1px solid var(--sand);border-radius:12px;padding:10px 12px"><div style="font-size:12.5px;color:var(--muted)">평균 정확도</div><b style="font-size:20px">${avg != null ? avg + '점' : '–'}</b>${avg == null ? '<div style="font-size:12px;color:var(--muted)">자동 채점을 붙이면 여기에 계산돼요</div>' : ''}</div>
+          <div style="background:var(--cream2);border:1px solid var(--sand);border-radius:12px;padding:10px 12px"><div style="font-size:12.5px;color:var(--muted)">자주 틀린 단어</div><b style="font-size:15px">–</b><div style="font-size:12px;color:var(--muted)">자동 채점을 붙이면 여기에 모여요</div></div>
+        </div>
+        <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:700;font-size:14px">읽은 책 ${batch.length}권 · 녹음 듣기</summary>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">${batch.map((x) => {
+            const b = bookById(x.book_id) || { title: '' };
+            return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;border-top:1px solid #EEE6D6;padding-top:8px"><span style="min-width:200px;font-size:14px"><b>ORT ${esc(x.book_id)}</b> ${esc(b.title)} <span style="color:var(--muted);font-size:12.5px">${fmtDate(x.created_at)}</span></span><audio controls preload="none" style="flex:1;min-width:220px;height:36px" data-path="${esc(x.audio_path)}"></audio></div>`;
+          }).join('')}</div>
+        </details>
+        <label for="bf-${s.user_id}" style="color:var(--muted)">${size}권 묶음 피드백</label>
+        <textarea class="tarea" id="bf-${s.user_id}" placeholder="예) ${size}권 모두 끝까지 잘 읽었어요! 요즘 th 소리가 많이 좋아졌어요. 다음엔 문장 끝을 또렷하게 읽어 봐요."></textarea>
+        <div class="trow"><button class="tbtn orange" data-batch="${s.user_id}" type="button">피드백 보내기</button></div>
       </div>`;
-    }).join('') : `<div class="empty">새로 들어온 녹음이 없어요 ☕</div>`}</div>`;
+    }).join('');
+    const gathering = T.students.filter((s) => !due.includes(s)).map((s) => {
+      const size = batchSize(s.level), n = waitingFor(s).length;
+      return `<tr><td><b>${esc(s.name)}</b><div style="font-size:12px;color:var(--muted)">${esc(s.class_name)}</div></td><td>Level ${s.level}</td><td>${n} / ${size}권</td><td>${progressBar(n, size)}</td></tr>`;
+    }).join('');
+    body = `<div class="tlist">${cards || `<div class="empty">지금 피드백 차례인 아이가 없어요 ☕</div>`}</div>
+      ${gathering ? `<b style="display:block;margin-top:26px;font-size:16px">모으는 중</b><div class="tablebox" style="margin-top:10px"><table style="min-width:520px"><thead><tr><th>학생</th><th>레벨</th><th>모은 녹음</th><th>다음 피드백까지</th></tr></thead><tbody>${gathering}</tbody></table></div>` : ''}`;
+  } else if (T.filter === 'all') {
+    const list = T.subs.slice(0, 120);
+    body = `<div class="tlist">${list.length ? list.map((x) => {
+      const b = bookById(x.book_id) || { title: '' };
+      return `<div class="tcard">
+        <div class="tmeta"><b>${esc(stuName(x.student_id))}</b><span>ORT ${esc(x.book_id)} ${esc(b.title)}</span><span>${fmtDate(x.created_at)}</span>${x.duration_sec ? `<span>${Math.floor(x.duration_sec / 60)}분 ${x.duration_sec % 60}초</span>` : ''}${x.batch_id || x.feedback ? '<span class="tag ok">피드백 완료</span>' : '<span class="tag wait">모으는 중</span>'}</div>
+        <div class="trow" style="align-items:center"><audio controls preload="none" style="flex:1;min-width:220px" data-path="${esc(x.audio_path)}"></audio><button class="tbtn" data-tdel="${x.id}" type="button">녹음 삭제</button></div>
+      </div>`;
+    }).join('') : `<div class="empty">아직 녹음이 없어요</div>`}</div>`;
+  } else {
+    body = `<div class="tlist">${T.fbs.length ? T.fbs.map((f) => `<div class="tcard"><div class="tmeta" style="margin-bottom:6px"><b>${esc(stuName(f.student_id))}</b></div>${fbCardHtml(f, false)}</div>`).join('') : `<div class="empty">아직 보낸 피드백이 없어요</div>`}</div>`;
+  }
+  $('tPending').innerHTML = head + body;
   $('tPending').querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { T.filter = b.dataset.f; renderPending(); });
-  $('tPending').querySelectorAll('[data-save]').forEach((b) => b.onclick = () => saveFeedback(b.dataset.save));
+  $('tPending').querySelectorAll('[data-batch]').forEach((b) => b.onclick = () => sendBatchFeedback(b.dataset.batch, b));
   $('tPending').querySelectorAll('[data-tdel]').forEach((b) => b.onclick = async () => {
     if (!confirmInline(b, '지운 녹음은 되돌릴 수 없어요')) return;
     const sub = T.subs.find((s) => s.id === b.dataset.tdel); if (!sub) return;
     if (!(await deleteSubmission(sub))) return;
     toast('녹음을 지웠어요'); await loadTeacherData(); renderPending();
   });
-  attachAudio($('tPending'));
+  $('tPending').querySelectorAll('details').forEach((d) => d.addEventListener('toggle', () => { if (d.open) attachAudio(d); }, { once: true }));
+  if (T.filter === 'all') attachAudio($('tPending'));
 }
-async function saveFeedback(id) {
-  const txt = $('fb-' + id).value.trim();
+async function sendBatchFeedback(studentId, btn) {
+  const s = T.students.find((x) => x.user_id === studentId); if (!s) return;
+  const txt = $('bf-' + studentId).value.trim();
   if (!txt) { toast('피드백을 한 줄 적어 주세요.'); return; }
-  const { error } = await sb.from('rr_submissions').update({ feedback: txt, feedback_at: new Date().toISOString() }).eq('id', id);
+  const ids = waitingFor(s).slice(0, batchSize(s.level)).map((x) => x.id);
+  btn.disabled = true;
+  const { error } = await sb.rpc('rr_give_feedback', { p_student: studentId, p_text: txt, p_submissions: ids });
+  btn.disabled = false;
   if (error) { toast('저장 실패: ' + error.message); return; }
-  toast('피드백을 보냈어요'); await loadTeacherData(); renderPending();
+  toast(`${s.name}에게 피드백을 보냈어요`); await loadTeacherData(); renderPending();
+}
+
+// 선생님 라이브러리: 레벨별 전체 책 + 읽은 학생
+function renderLibrary() {
+  const lv = T.libLevel;
+  const readers = {};
+  T.subs.forEach((x) => { (readers[x.book_id] = readers[x.book_id] || new Set()).add(x.student_id); });
+  const books = S.books.filter((b) => b.level === lv);
+  const withVideo = books.filter((b) => b.video_drive_id).length;
+  $('tLibrary').innerHTML = `
+    <div class="trow" style="margin-top:18px;align-items:center">
+      <b style="font-size:18px;margin-right:auto">ORT 라이브러리</b>
+      ${LEVELS.map((l) => `<button class="tbtn ${l === lv ? 'dark' : ''}" data-lib="${l}" type="button">Level ${l} · ${S.books.filter((b) => b.level === l).length}권</button>`).join('')}
+    </div>
+    <p style="margin:8px 2px 0;color:var(--muted);font-size:13.5px">Level ${lv} · ${books.length}권 · 영상 연결 ${withVideo}권. 책을 누르면 영상과 읽은 아이들이 보여요.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:16px">
+      ${books.map((b) => {
+        const c = bookColor(b), n = readers[b.id] ? readers[b.id].size : 0;
+        return `<button type="button" data-lb="${esc(b.id)}" style="text-align:left;border:1px solid var(--sand);background:#fff;border-radius:14px;padding:10px;display:flex;gap:10px;align-items:stretch;min-height:96px">
+          <span style="width:30px;flex-shrink:0;border-radius:3px 6px 6px 3px;background:${c};box-shadow:inset 3px 0 0 rgba(0,0,0,.18);display:flex;align-items:flex-start;justify-content:center;padding-top:6px"><span style="writing-mode:vertical-rl;font-size:10.5px;font-weight:700;color:${LIGHT[c] ? '#121C33' : '#fff'}">${esc(b.id)}</span></span>
+          <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
+            <b style="font-size:14px;line-height:1.3;color:var(--ink)">${esc(b.title)}</b>
+            <span style="font-size:12px;color:var(--muted)">${b.video_drive_id ? '영상 있음' : '영상 없음'}</span>
+            <span style="font-size:12.5px;font-weight:700;color:${n ? 'var(--good)' : 'var(--muted)'}">${n ? `${n}명 읽음` : '아직 없음'}</span>
+          </span>
+        </button>`;
+      }).join('')}
+    </div>`;
+  $('tLibrary').querySelectorAll('[data-lib]').forEach((b) => b.onclick = () => { T.libLevel = +b.dataset.lib; renderLibrary(); });
+  $('tLibrary').querySelectorAll('[data-lb]').forEach((b) => b.onclick = () => openLibraryBook(b.dataset.lb));
+}
+function openLibraryBook(id) {
+  const b = bookById(id); if (!b) return;
+  const subs = T.subs.filter((x) => x.book_id === id);
+  const video = b.video_drive_id
+    ? `<div class="video"><iframe src="https://drive.google.com/file/d/${encodeURIComponent(b.video_drive_id)}/preview" allow="autoplay; fullscreen" allowfullscreen title="${esc(b.title)} 영상"></iframe></div>`
+    : `<p style="margin:0;color:var(--soft)">이 책은 영상이 아직 연결되지 않았어요.</p>`;
+  openSheet(`
+    <button class="ghost close" type="button" id="xBtn">닫기</button>
+    <div class="bookhead"><span class="mini" style="background:${bookColor(b)};${LIGHT[bookColor(b)] ? 'color:#121C33' : ''}">${esc(b.id)}</span>
+      <div><h2>${esc(b.title)}</h2><div style="font-size:13px;color:var(--soft)">ORT Level ${b.level} · ${b.num}번</div></div></div>
+    <div class="step"><h3>영상</h3>${video}</div>
+    <div class="step"><h3>읽은 아이 · ${new Set(subs.map((x) => x.student_id)).size}명</h3>
+      <div class="hist">${subs.length ? subs.map((x) => `<div class="item"><div style="font-size:13.5px"><b>${esc(stuName(x.student_id))}</b> <span style="color:var(--soft)">${fmtDate(x.created_at)}</span></div><audio controls preload="none" data-path="${esc(x.audio_path)}"></audio></div>`).join('') : '<div class="item" style="color:var(--soft)">아직 이 책을 읽은 아이가 없어요</div>'}</div>
+    </div>`);
+  $('xBtn').onclick = closeSheet;
+  attachAudio($('panel'));
 }
 
 function renderStudents() {
@@ -575,6 +707,7 @@ function renderStudents() {
       <td style="font-variant-numeric:tabular-nums">${esc(s.pin)}</td>
       <td><select class="tinput" style="min-height:38px;width:auto" data-lv="${s.user_id}">${LEVELS.map((l) => `<option value="${l}" ${l === s.level ? 'selected' : ''}>Level ${l}</option>`).join('')}</select></td>
       <td>${inLevel} / ${total}권 ${clear ? '<span class="tag gift">완독! 선물 준비</span>' : ''}</td>
+      <td>${Math.min(waitingFor(s).length, batchSize(s.level))} / ${batchSize(s.level)}권</td>
       <td>${last ? fmtDate(last.created_at) + '<div style="font-size:12px;color:var(--muted)">ORT ' + esc(last.book_id) + '</div>' : '<span style="color:var(--muted)">아직 없음</span>'}</td>
       <td>${s.last_login_at ? fmtDate(s.last_login_at) : '<span style="color:var(--muted)">-</span>'}</td>
       <td><div class="trow" style="margin:0"><button class="tbtn" data-copy="${s.user_id}" type="button">안내문</button><button class="tbtn" data-pin="${s.user_id}" type="button">비번 바꾸기</button></div></td>
@@ -582,7 +715,7 @@ function renderStudents() {
   }).join('');
   $('tStudents').innerHTML = T.students.length ? `
     <div class="tablebox"><table>
-      <thead><tr><th>학생</th><th>아이디</th><th>비밀번호</th><th>레벨</th><th>레벨 진도</th><th>마지막 녹음</th><th>마지막 접속</th><th></th></tr></thead>
+      <thead><tr><th>학생</th><th>아이디</th><th>비밀번호</th><th>레벨</th><th>레벨 진도</th><th>다음 피드백</th><th>마지막 녹음</th><th>마지막 접속</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div>
     <div id="copyOut"></div>` : `<div class="empty">아직 학생이 없어요. "학생 추가"에서 만들어 주세요.</div>`;
   $('tStudents').querySelectorAll('[data-lv]').forEach((sel) => sel.onchange = async () => {
